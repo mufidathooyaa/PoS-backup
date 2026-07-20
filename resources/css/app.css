@@ -1,0 +1,28 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { @apply border-slate-200; }
+  body { @apply m-0 bg-canvas font-sans text-slate-900 antialiased; }
+  button, input, select, textarea { @apply outline-none; }
+  button { @apply transition-colors; }
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-slate-300; }
+}
+
+@layer components {
+  .card { @apply rounded-lg border bg-white shadow-card; }
+  .btn { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-orange text-white hover:bg-orange-600; }
+  .btn-secondary { @apply btn border bg-white text-slate-700 hover:bg-slate-50; }
+  .btn-danger { @apply btn bg-red-500 text-white hover:bg-red-600; }
+  .input { @apply h-9 w-full rounded-lg border bg-white px-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-orange focus:ring-2 focus:ring-orange/10; }
+  .label { @apply mb-1.5 block text-xs font-semibold text-slate-600; }
+  .badge { @apply inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold; }
+  .page-title { @apply text-xl font-bold tracking-tight text-slate-900; }
+  .page-subtitle { @apply mt-0.5 text-sm text-slate-500; }
+  .table-head { @apply bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500; }
+  .table-cell { @apply border-t px-4 py-3 text-xs text-slate-700; }
+}
