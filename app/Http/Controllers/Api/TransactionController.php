@@ -43,7 +43,7 @@ class TransactionController extends Controller
         if ($existing) {
             return response()->json([
                 'message' => 'Transaksi ini sudah pernah diproses sebelumnya',
-                'transaction' => $existing->load('items', 'payments'),
+                'transaction' => $existing->load('items', 'payments.paymentMethod', 'cashier', 'outlet'),
             ], 200);
         }
 
@@ -198,7 +198,7 @@ class TransactionController extends Controller
 
             return response()->json([
                 'message' => 'Transaksi berhasil',
-                'transaction' => $transaction->load('items', 'payments'),
+                'transaction' => $transaction->load('items', 'payments.paymentMethod', 'cashier', 'outlet'),
             ], 201);
 
         } catch (\Exception $e) {
@@ -238,7 +238,7 @@ class TransactionController extends Controller
 
     public function show(string $id)
     {
-        $transaction = Transaction::with(['items', 'payments', 'cashier'])->find($id);
+        $transaction = Transaction::with(['items', 'payments.paymentMethod', 'cashier', 'outlet'])->find($id);
 
         if (! $transaction) {
             return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);

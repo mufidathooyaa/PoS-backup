@@ -330,7 +330,7 @@ class TransactionActionController extends Controller
 
             return response()->json([
                 'message' => 'Transaksi berhasil diselesaikan',
-                'transaction' => $transaction->fresh(['items', 'payments']),
+                'transaction' => $transaction->fresh(['items', 'payments.paymentMethod', 'cashier', 'outlet']),
             ]);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);

@@ -1,11 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { Printer } from "lucide-react";
 import { Modal } from "../../components/ui/Modal";
 import { useToast } from "../../context/ToastContext";
 import { formatIDR } from "../../mockData";
+import { downloadReceiptPdf } from "../../lib/receiptPdf";
 
 export function ReceiptModal({ open, transaction, onClose }) {
   const toast = useToast();
+  const [printing, setPrinting] = useState(false);
+
+  const handlePrint = () => {
+    if (!transaction) return;
+    setPrinting(true);
+    try {
+      downloadReceiptPdf(transaction);
+      toast("Struk berhasil diunduh sebagai PDF");
+    } catch (err) {
+      toast(err.message || "Gagal membuat PDF struk", "danger");
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   return (
     <Modal open={open} title="Struk Transaksi" onClose={onClose} width="max-w-sm">
@@ -33,7 +48,9 @@ export function ReceiptModal({ open, transaction, onClose }) {
         )}
         <p className="mt-5 text-[11px] text-slate-500">Terima kasih telah berbelanja</p>
       </div>
-      <button className="btn-primary mt-5 w-full" onClick={() => toast("Struk siap dicetak")}><Printer size={15} /> Cetak Struk</button>
+      <button className="btn-primary mt-5 w-full" onClick={handlePrint} disabled={printing || !transaction}>
+        <Printer size={15} /> {printing ? "Membuat PDF..." : "Cetak Struk (PDF)"}
+      </button>
     </Modal>
   );
 }

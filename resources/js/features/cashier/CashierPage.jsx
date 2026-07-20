@@ -11,6 +11,7 @@ import { formatIDR } from "../../mockData";
 import { api, ApiError } from "../../lib/apiClient";
 import { BarcodeScannerModal } from "../../components/ui/BarcodeScannerModal";
 import qrisImage from "../../assets/qris.jpeg";
+import { downloadReceiptPdf } from "../../lib/receiptPdf";
 
 export function CashierPage() {
   const { user } = useAuth();
@@ -407,7 +408,19 @@ export function CashierPage() {
             <div className="mt-2 text-xs text-slate-500">Kembalian: <span className="font-bold text-slate-800">{formatIDR(successResult.payments[0].kembalian)}</span></div>
           )}
           <div className="mt-5 grid grid-cols-2 gap-2">
-            <button className="btn-secondary" onClick={() => toast("Struk siap dicetak")}><Printer size={15} /> Cetak Struk</button>
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                try {
+                  downloadReceiptPdf(successResult);
+                  toast("Struk berhasil diunduh sebagai PDF");
+                } catch (err) {
+                  toast(err.message || "Gagal membuat PDF struk", "danger");
+                }
+              }}
+            >
+              <Printer size={15} /> Cetak Struk
+            </button>
             <button className="btn-primary" onClick={() => setSuccessResult(null)}>Transaksi Baru</button>
           </div>
         </div>
