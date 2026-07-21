@@ -28,6 +28,7 @@ class TransactionController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|uuid|exists:products,id',
             'items.*.jumlah' => 'required|integer|min:1',
+            'items.*.price_override_token' => 'nullable|string',
             'tax_rule_id' => 'nullable|integer|exists:tax_rules,id',
             'discount_rule_id' => 'nullable|integer|exists:discount_rules,id',
             'payment_method_id' => 'required|integer|exists:payment_methods,id',
@@ -87,14 +88,38 @@ class TransactionController extends Controller
                         }
                     }
 
-                    $lineTotal = $product->harga * $item['jumlah'];
+                    $hargaSatuan = $product->harga;
+                    $overrideInfo = null;
+
+                    if (! empty($item['price_override_token'])) {
+                        $cacheKey = "price_override:{$item['price_override_token']}";
+                        $override = \Illuminate\Support\Facades\Cache::get($cacheKey);
+
+                        if (! $override) {
+                            throw new \Exception("Otorisasi perubahan harga untuk '{$product->nama}' sudah kedaluwarsa, ulangi otorisasi");
+                        }
+                        if ($override['product_id'] !== $product->id) {
+                            throw new \Exception("Otorisasi harga tidak cocok dengan produk '{$product->nama}'");
+                        }
+
+                        $hargaSatuan = $override['harga_baru'];
+                        $overrideInfo = [
+                            'alasan' => $override['alasan'],
+                            'approved_by_user_id' => $override['user_id'],
+                        ];
+
+                        \Illuminate\Support\Facades\Cache::forget($cacheKey); // token sekali pakai
+                    }
+
+                    $lineTotal = $hargaSatuan * $item['jumlah'];
                     $subtotal += $lineTotal;
 
                     $itemsData[] = [
                         'product' => $product,
                         'jumlah' => $item['jumlah'],
-                        'harga_satuan' => $product->harga,
+                        'harga_satuan' => $hargaSatuan,
                         'total_baris' => $lineTotal,
+                        'override_info' => $overrideInfo,
                     ];
                 }
 
@@ -155,9 +180,11 @@ class TransactionController extends Controller
                         'snapshot_nama_produk' => $product->nama,
                         'jumlah' => $data['jumlah'],
                         'harga_satuan' => $data['harga_satuan'],
-                        'diskon' => 0, // diskon level item belum dicakup di MVP ini
-                        'pajak' => 0,  // pajak level item belum dicakup di MVP ini
+                        'diskon' => 0,
+                        'pajak' => 0,
                         'total_baris' => $data['total_baris'],
+                        'alasan_override' => $data['override_info']['alasan'] ?? null,
+                        'override_approved_by_user_id' => $data['override_info']['approved_by_user_id'] ?? null,
                     ]);
 
                     if ($product->track_stock) {
@@ -238,7 +265,7 @@ class TransactionController extends Controller
 
     public function show(string $id)
     {
-        $transaction = Transaction::with(['items', 'payments.paymentMethod', 'cashier', 'outlet'])->find($id);
+        $transaction = Transaction::with(['items.overrideApprovedBy', 'payments.paymentMethod', 'cashier', 'outlet'])->find($id);
 
         if (! $transaction) {
             return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);

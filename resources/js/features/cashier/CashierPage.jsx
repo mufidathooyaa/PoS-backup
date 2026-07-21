@@ -41,6 +41,14 @@ export function CashierPage() {
   const [resumePaymentMethodId, setResumePaymentMethodId] = useState(null);
   const [scannerOpen, setScannerOpen] = useState(false);
 
+  const [overrideTarget, setOverrideTarget] = useState(null); // item keranjang yang sedang di-override
+  const [overridePrice, setOverridePrice] = useState("");
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideAdminLogin, setOverrideAdminLogin] = useState("");
+  const [overrideAdminPassword, setOverrideAdminPassword] = useState("");
+  const [overrideSubmitting, setOverrideSubmitting] = useState(false);
+  const [overrideStep, setOverrideStep] = useState("input"); // "input" | "auth"
+
   const shiftOpen = !!shift;
 
   const loadAll = useCallback(async () => {
@@ -118,6 +126,49 @@ export function CashierPage() {
     }).filter((x) => x.qty > 0));
   };
 
+  const openOverride = (cartItem) => {
+    setOverrideTarget(cartItem);
+    setOverridePrice(String(cartItem.harga));
+    setOverrideReason("");
+    setOverrideAdminLogin("");
+    setOverrideAdminPassword("");
+    setOverrideStep("input");
+  };
+
+  const submitOverrideStepOne = (e) => {
+    e.preventDefault();
+    if (!overridePrice || Number(overridePrice) < 0) return toast("Harga baru tidak valid", "danger");
+    if (!overrideReason.trim()) return toast("Alasan wajib diisi", "danger");
+    setOverrideStep("auth");
+  };
+
+  const submitOverrideAuth = async (e) => {
+    e.preventDefault();
+    setOverrideSubmitting(true);
+    try {
+      const res = await api.post("/price-overrides/authorize", {
+        login: overrideAdminLogin,
+        password: overrideAdminPassword,
+        product_id: overrideTarget.product_id,
+        harga_baru: Number(overridePrice),
+        alasan: overrideReason,
+      });
+
+      setCart((c) => c.map((x) =>
+        x.product_id === overrideTarget.product_id
+          ? { ...x, harga: Number(overridePrice), override_token: res.token, override_nama_admin: res.nama_admin, override_alasan: overrideReason }
+          : x
+      ));
+
+      toast(`Harga diotorisasi oleh ${res.nama_admin}`);
+      setOverrideTarget(null);
+    } catch (err) {
+      toast(err.message || "Otorisasi gagal", "danger");
+    } finally {
+      setOverrideSubmitting(false);
+    }
+  };
+
   const handleBarcodeDetected = (barcodeText) => {
     setScannerOpen(false);
     const product = catalog.find((p) => p.barcode === barcodeText);
@@ -161,7 +212,11 @@ export function CashierPage() {
     try {
       const payload = {
         idempotency_key: crypto.randomUUID(),
-        items: cart.map((x) => ({ product_id: x.product_id, jumlah: x.qty })),
+        items: cart.map((x) => ({ 
+          product_id: x.product_id, 
+          jumlah: x.qty, 
+          price_override_token: x.override_token ?? undefined,
+        })),
         tax_rule_id: taxRule?.id ?? null,
         discount_rule_id: discountRuleId,
         payment_method_id: paymentMethodId,
@@ -342,10 +397,17 @@ export function CashierPage() {
             <div className="space-y-3">
               {cart.map((p) => (
                 <div key={p.product_id} className="rounded-lg border p-3">
-                  <div className="flex justify-between gap-2">
-                    <div><div className="text-xs font-bold">{p.nama}</div><div className="mt-1 text-[11px] text-slate-500">{formatIDR(p.harga)}</div></div>
-                    <button className="text-slate-400 hover:text-red-500" onClick={() => setCart((c) => c.filter((x) => x.product_id !== p.product_id))}><X size={15} /></button>
-                  </div>
+                   <div className="flex justify-between gap-2">
+                      <div>
+                        <div className="text-xs font-bold">{p.nama}</div>
+                        <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
+                          {formatIDR(p.harga)}
+                          {p.override_token && <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">Harga diubah</span>}
+                          <button className="text-blue-500 underline" onClick={() => openOverride(p)}>Ubah Harga</button>
+                        </div>
+                      </div>
+                      <button className="text-slate-400 hover:text-red-500" onClick={() => setCart((c) => c.filter((x) => x.product_id !== p.product_id))}><X size={15} /></button>
+                    </div>
                   <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center rounded-lg border">
                       <button className="p-1.5" onClick={() => changeQty(p.product_id, -1)}><Minus size={13} /></button>
@@ -508,6 +570,30 @@ export function CashierPage() {
           
           <button className="btn-secondary mt-2 w-full" onClick={() => setQrisModalOpen(false)}>Batal</button>
         </div>
+      </Modal>
+
+      <Modal open={!!overrideTarget} title={overrideStep === "input" ? "Ubah Harga Item" : "Otorisasi Admin"} onClose={() => setOverrideTarget(null)} width="max-w-sm">
+        {overrideStep === "input" ? (
+          <form onSubmit={submitOverrideStepOne}>
+            <p className="text-xs text-slate-500">Harga saat ini: <b>{overrideTarget && formatIDR(overrideTarget.harga)}</b></p>
+            <div className="mt-3"><label className="label">Harga baru</label><input type="number" className="input" value={overridePrice} onChange={(e) => setOverridePrice(e.target.value)} /></div>
+            <div className="mt-3"><label className="label">Alasan perubahan harga</label><textarea className="input h-auto py-2" rows="3" value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} placeholder="Jelaskan alasan perubahan harga..." /></div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" className="btn-secondary" onClick={() => setOverrideTarget(null)}>Batal</button>
+              <button className="btn-primary">Lanjut ke Otorisasi</button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={submitOverrideAuth}>
+            <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-700">Perubahan harga memerlukan otorisasi Admin/Supervisor. Minta Admin memasukkan kredensialnya di sini.</div>
+            <div className="mt-3"><label className="label">Username atau Email Admin</label><input className="input" value={overrideAdminLogin} onChange={(e) => setOverrideAdminLogin(e.target.value)} /></div>
+            <div className="mt-3"><label className="label">Password Admin</label><input type="password" className="input" value={overrideAdminPassword} onChange={(e) => setOverrideAdminPassword(e.target.value)} /></div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" className="btn-secondary" onClick={() => setOverrideStep("input")}>Kembali</button>
+              <button className="btn-primary" disabled={overrideSubmitting}>{overrideSubmitting ? "Memverifikasi..." : "Otorisasi"}</button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );

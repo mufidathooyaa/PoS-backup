@@ -180,13 +180,20 @@ export function TransactionsPage() {
             <div className="mt-5">
               <h4 className="text-xs font-bold">Item transaksi</h4>
               {selected.items.map((it) => (
-                <div className="flex justify-between border-b py-3 text-xs" key={it.id}>
-                  <div>
-                    <div className="font-semibold">{it.snapshot_nama_produk}</div>
-                    <div className="mt-1 text-slate-500">{it.jumlah} × {formatIDR(it.harga_satuan)}</div>
-                    {it.sudah_direfund > 0 && <div className="mt-0.5 text-[10px] text-amber-600">{it.sudah_direfund} sudah direfund</div>}
+                <div className="border-b py-3 text-xs" key={it.id}>
+                  <div className="flex justify-between">
+                    <div>
+                      <div className="font-semibold">{it.snapshot_nama_produk}</div>
+                      <div className="mt-1 text-slate-500">{it.jumlah} × {formatIDR(it.harga_satuan)}</div>
+                      {it.sudah_direfund > 0 && <div className="mt-0.5 text-[10px] text-amber-600">{it.sudah_direfund} sudah direfund</div>}
+                    </div>
+                    <span className="font-semibold">{formatIDR(it.total_baris)}</span>
                   </div>
-                  <span className="font-semibold">{formatIDR(it.total_baris)}</span>
+                  {it.alasan_override && (
+                    <div className="mt-2 rounded-lg bg-amber-50 p-2 text-[11px] text-amber-700">
+                      <b>Harga diubah:</b> {it.alasan_override}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
