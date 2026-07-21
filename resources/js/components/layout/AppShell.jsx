@@ -44,7 +44,7 @@ export function AppShell() {
           <button onClick={toggleOnline} className={`hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold sm:flex ${online ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
             {online ? <Wifi size={15} /> : <WifiOff size={15} />} {online ? "Mode Online" : "Mode Offline"}
           </button>
-          <button className="hidden h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-700 md:flex">Outlet Utama <ChevronDown size={14} /></button>
+          <button className="hidden h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-700 md:flex">{user.outlet_nama} <ChevronDown size={14} /></button>
           <div className="relative">
             <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }}><Bell size={19} /><span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-red-500 text-[9px] font-bold text-white">3</span></button>
             {notifOpen && <div className="absolute right-0 top-12 z-40 w-80 rounded-lg border bg-white p-2 shadow-xl">

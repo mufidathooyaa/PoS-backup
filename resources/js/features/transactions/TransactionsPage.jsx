@@ -192,6 +192,7 @@ export function TransactionsPage() {
                   {it.alasan_override && (
                     <div className="mt-2 rounded-lg bg-amber-50 p-2 text-[11px] text-amber-700">
                       <b>Harga diubah:</b> {it.alasan_override}
+                      {it.override_approved_by && <div className="mt-0.5">Disetujui oleh: <b>{it.override_approved_by.nama}</b></div>}
                     </div>
                   )}
                 </div>

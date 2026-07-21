@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\DiscountRuleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\OutletController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -106,6 +107,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('permission:view_audit_logs')
         ->get('/audit-logs', [AuditLogController::class, 'index']);
     
+    Route::middleware('permission:manage_outlets')->group(function () {
+        Route::get('/outlets', [OutletController::class, 'index']);
+        Route::post('/outlets', [OutletController::class, 'store']);
+        Route::put('/outlets/{id}', [OutletController::class, 'update']);
+        Route::post('/outlets/{id}/toggle-active', [OutletController::class, 'toggleActive']);
+    });
+
     Route::middleware('permission:manage_users')->group(function () {
         Route::get('/roles', [RoleController::class, 'index']);
         Route::get('/users', [UserController::class, 'index']);

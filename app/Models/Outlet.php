@@ -12,6 +12,13 @@ class Outlet extends Model
 
     protected $fillable = [
         'nama',
+        'kode',
         'alamat',
+        'is_active',
+    ];
+
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 }

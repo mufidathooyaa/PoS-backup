@@ -39,6 +39,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('pos-token')->plainTextToken;
 
+        $user->load('outlet');
+
         return response()->json([
             'message' => 'Login berhasil',
             'user' => [
@@ -47,6 +49,7 @@ class AuthController extends Controller
                 'username' => $user->username,
                 'role' => $user->role->nama_peran,
                 'outlet_id' => $user->outlet_id,
+                'outlet_nam' => $user->outlet->nama,
             ],
             'token' => $token,
         ]);

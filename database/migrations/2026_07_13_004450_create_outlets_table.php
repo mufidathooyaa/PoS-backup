@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('nama');
             $table->text('alamat')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

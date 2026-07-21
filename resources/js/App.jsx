@@ -9,6 +9,7 @@ import { Login } from "./components/layout/Login";
 import { Unauthorized } from "./components/layout/Unauthorized";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { UsersPage } from "./features/users/UsersPage";
+import { OutletsPage } from "./features/outlets/OutletsPage";
 import { ShiftPage } from "./features/shift/ShiftPage";
 import { TransactionsPage } from "./features/transactions/TransactionsPage";
 import { CashierPage } from "./features/cashier/CashierPage";
@@ -21,6 +22,7 @@ export default function App() {
     <Route path="/login" element={<Login/>}/>
     <Route element={<ProtectedRoute><AppShell/></ProtectedRoute>}>
       <Route path="/dashboard" element={<ProtectedRoute allowed={["Admin"]}><Dashboard/></ProtectedRoute>}/>
+      <Route path="/outlet" element={<ProtectedRoute allowed={["Admin"]}><OutletsPage/></ProtectedRoute>}/>
       <Route path="/pengguna-role" element={<ProtectedRoute allowed={["Admin"]}><UsersPage/></ProtectedRoute>}/>
       <Route path="/shift" element={<ProtectedRoute allowed={["Admin","Kasir"]}><ShiftPage/></ProtectedRoute>}/>
       <Route path="/transaksi" element={<ProtectedRoute allowed={["Admin","Kasir"]}><TransactionsPage/></ProtectedRoute>}/>

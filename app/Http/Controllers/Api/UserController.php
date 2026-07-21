@@ -14,10 +14,16 @@ class UserController extends Controller
     {
         $admin = $request->user();
 
-        $users = User::with('role')
-            ->where('outlet_id', $admin->outlet_id)
-            ->orderBy('nama')
-            ->get();
+        $query = User::with(['role', 'outlet']);
+
+        // Default (tanpa filter): tampilkan pengguna di semua outlet, karena Admin
+        // mengelola organisasi secara keseluruhan, bukan cuma outlet tempatnya login.
+        // Ini juga tidak mengubah perilaku pada pilot dengan 1 outlet saja.
+        if ($request->filled('outlet_id')) {
+            $query->where('outlet_id', $request->outlet_id);
+        }
+
+        $users = $query->orderBy('nama')->get();
 
         return response()->json(['users' => $users]);
     }
@@ -32,6 +38,7 @@ class UserController extends Controller
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:6',
             'role_id' => 'required|integer|exists:roles,id',
+            'outlet_id' => 'nullable|uuid|exists:outlets,id',
         ]);
         if ($validator->fails()) {
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
@@ -43,17 +50,18 @@ class UserController extends Controller
             'email' => $request->email,
             'password_hash' => $request->password, // otomatis di-hash oleh cast 'hashed' di model
             'role_id' => $request->role_id,
-            'outlet_id' => $admin->outlet_id,
+            'outlet_id' => $request->outlet_id ?? $admin->outlet_id,
             'is_active' => true,
         ]);
 
-        AuditLogger::log($request, 'create_user', 'users', $user->id, 'success', null, ['nama' => $user->nama, 'role_id' => $user->role_id]);
+        AuditLogger::log($request, 'create_user', 'users', $user->id, 'success', null, ['nama' => $user->nama, 'role_id' => $user->role_id, 'outlet_id' => $user->outlet_id]);
 
-        return response()->json(['message' => 'Pengguna berhasil dibuat', 'user' => $user->load('role')], 201);
+        return response()->json(['message' => 'Pengguna berhasil dibuat', 'user' => $user->load('role', 'outlet')], 201);
     }
 
     public function update(Request $request, string $id)
     {
+        $admin = $request->user();
         $user = User::find($id);
         if (! $user) {
             return response()->json(['message' => 'Pengguna tidak ditemukan'], 404);
@@ -65,22 +73,27 @@ class UserController extends Controller
             'email' => 'sometimes|email|max:255|unique:users,email,' . $id,
             'password' => 'nullable|string|min:6',
             'role_id' => 'sometimes|integer|exists:roles,id',
+            'outlet_id' => 'sometimes|uuid|exists:outlets,id',
         ]);
         if ($validator->fails()) {
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
 
-        $oldData = ['nama' => $user->nama, 'role_id' => $user->role_id];
+        if ($request->filled('outlet_id') && $user->id === $admin->id && $request->outlet_id !== $admin->outlet_id) {
+            return response()->json(['message' => 'Anda tidak dapat memindahkan outlet akun Anda sendiri'], 422);
+        }
 
-        $user->fill($request->only(['nama', 'username', 'email', 'role_id']));
+        $oldData = ['nama' => $user->nama, 'role_id' => $user->role_id, 'outlet_id' => $user->outlet_id];
+
+        $user->fill($request->only(['nama', 'username', 'email', 'role_id', 'outlet_id']));
         if ($request->filled('password')) {
             $user->password_hash = $request->password;
         }
         $user->save();
 
-        AuditLogger::log($request, 'update_user', 'users', $user->id, 'success', $oldData, ['nama' => $user->nama, 'role_id' => $user->role_id]);
+        AuditLogger::log($request, 'update_user', 'users', $user->id, 'success', $oldData, ['nama' => $user->nama, 'role_id' => $user->role_id, 'outlet_id' => $user->outlet_id]);
 
-        return response()->json(['message' => 'Pengguna berhasil diperbarui', 'user' => $user->load('role')]);
+        return response()->json(['message' => 'Pengguna berhasil diperbarui', 'user' => $user->load('role', 'outlet')]);
     }
 
     public function toggleActive(Request $request, string $id)
@@ -101,7 +114,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => $user->is_active ? 'Pengguna diaktifkan' : 'Pengguna dinonaktifkan',
-            'user' => $user->fresh('role'),
+            'user' => $user->fresh(['role', 'outlet']),
         ]);
     }
 }

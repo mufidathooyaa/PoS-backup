@@ -24,6 +24,7 @@ export function AuthProvider({ children }) {
         username: data.user.username,
         role: data.user.role,
         outlet_id: data.user.outlet_id,
+        outlet_nama: data.user.outlet_nama,
       };
 
       localStorage.setItem("pos_token", data.token);

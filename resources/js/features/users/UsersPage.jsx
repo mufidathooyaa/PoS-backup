@@ -19,6 +19,7 @@ export function UsersPage() {
 
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [outlets, setOutlets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(false);
@@ -28,9 +29,12 @@ export function UsersPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [usersRes, rolesRes] = await Promise.all([api.get("/users"), api.get("/roles")]);
+      const [usersRes, rolesRes, outletsRes] = await Promise.all([
+        api.get("/users"), api.get("/roles"), api.get("/outlets"),
+      ]);
       setUsers(usersRes.users);
       setRoles(rolesRes.roles);
+      setOutlets(outletsRes.outlets);
     } catch (err) {
       toast(err.message || "Gagal memuat data pengguna", "danger");
     } finally {
@@ -55,6 +59,7 @@ export function UsersPage() {
       username: fd.get("username"),
       email: fd.get("email"),
       role_id: Number(fd.get("role_id")),
+      outlet_id: fd.get("outlet_id"),
     };
     const password = fd.get("password");
     if (password) payload.password = password;
@@ -116,7 +121,7 @@ export function UsersPage() {
           </div>
         </div>
         <table className="w-full">
-          <thead className="table-head"><tr><th className="px-4 py-3">Pengguna</th><th>Role</th><th>Status</th><th className="pr-4 text-right">Aksi</th></tr></thead>
+          <thead className="table-head"><tr><th className="px-4 py-3">Pengguna</th><th>Role</th><th>Outlet</th><th>Status</th><th className="pr-4 text-right">Aksi</th></tr></thead>
           <tbody>
             {filteredUsers.map((u) => (
               <tr key={u.id}>
@@ -125,6 +130,7 @@ export function UsersPage() {
                   <div className="text-[11px] text-slate-500">{u.email} • {u.username}</div>
                 </td>
                 <td className="table-cell">{u.role?.nama_peran}</td>
+                <td className="table-cell">{u.outlet?.nama ?? "-"}</td>
                 <td className="table-cell"><Status value={u.is_active ? "Aktif" : "Nonaktif"} /></td>
                 <td className="table-cell text-right">
                   <button className="mr-2 rounded-md border p-2 hover:bg-slate-50" onClick={() => { setEditing(u); setModal(true); }}><Pencil size={14} /></button>
@@ -138,7 +144,7 @@ export function UsersPage() {
                 </td>
               </tr>
             ))}
-            {filteredUsers.length === 0 && <tr><td colSpan={4} className="table-cell text-center text-slate-400">Tidak ada pengguna ditemukan</td></tr>}
+            {filteredUsers.length === 0 && <tr><td colSpan={5} className="table-cell text-center text-slate-400">Tidak ada pengguna ditemukan</td></tr>}
           </tbody>
         </table>
       </div>
@@ -157,6 +163,21 @@ export function UsersPage() {
             <select name="role_id" required className="input" defaultValue={editing?.role_id}>
               {roles.map((r) => <option key={r.id} value={r.id}>{r.nama_peran}</option>)}
             </select>
+          </div>
+          <div>
+            <label className="label">Outlet</label>
+            <select
+              name="outlet_id"
+              required
+              className="input"
+              defaultValue={editing?.outlet_id ?? currentUser.outlet_id}
+              disabled={editing?.id === currentUser.id}
+            >
+              {outlets.map((o) => <option key={o.id} value={o.id}>{o.nama}</option>)}
+            </select>
+            {editing?.id === currentUser.id && (
+              <p className="mt-1 text-[11px] text-slate-400">Anda tidak dapat memindahkan outlet akun sendiri</p>
+            )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" className="btn-secondary" onClick={() => setModal(false)}>Batal</button>
