@@ -14,6 +14,7 @@ const ACTION_LABEL = {
   archive_product: "Arsipkan Produk",
   reactivate_product: "Aktifkan Produk",
   close_shift: "Tutup Shift",
+  review_shift_variance: "Tinjau Selisih Shift",
   stock_receipt: "Penerimaan Stok",
   stock_adjustment: "Penyesuaian Stok",
   stock_adjustment_request: "Pengajuan Penyesuaian Stok",
@@ -22,6 +23,23 @@ const ACTION_LABEL = {
   authorize_price_override: "Otorisasi Override Harga",
   apply_price_override: "Terapkan Override Harga",
   change_own_password: "Ganti Password Sendiri",
+  create_user: "Tambah Pengguna",
+  update_user: "Ubah Data Pengguna",
+  activate_user: "Aktifkan Pengguna",
+  deactivate_user: "Nonaktifkan Pengguna",
+  create_outlet: "Tambah Outlet",
+  update_outlet: "Ubah Data Outlet",
+  activate_outlet: "Aktifkan Outlet",
+  deactivate_outlet: "Nonaktifkan Outlet",
+};
+
+const TABLE_LABEL = {
+  users: "Pengguna",
+  outlets: "Outlet",
+  products: "Produk",
+  transactions: "Transaksi",
+  shifts: "Shift",
+  stock_movements: "Pergerakan Stok",
 };
 
 export function AuditLogPage() {
@@ -94,7 +112,7 @@ export function AuditLogPage() {
                 <td className="table-cell">{new Date(l.created_at).toLocaleString("id-ID")}</td>
                 <td className="table-cell font-semibold">{ACTION_LABEL[l.action] ?? l.action}</td>
                 <td className="table-cell">{l.user?.nama ?? "-"}</td>
-                <td className="table-cell text-[11px] text-slate-500">{l.table_name} • {l.record_id?.slice(0, 8)}...</td>
+                <td className="table-cell text-[11px] text-slate-500" title={l.record_id}>{TABLE_LABEL[l.table_name] ?? l.table_name} • {l.record_id?.slice(0, 8)}...</td>
                 <td className="table-cell"><Status value={l.hasil === "success" ? "Berhasil" : l.hasil === "rejected" ? "Ditolak" : "Gagal"} /></td>
                 <td className="table-cell text-right"><button className="btn-secondary h-8 px-2" onClick={() => setSelected(l)}><Eye size={14} /> Detail</button></td>
               </tr>
@@ -110,7 +128,7 @@ export function AuditLogPage() {
             <div className="rounded-lg bg-slate-50 p-4">
               <div className="flex justify-between"><Status value={selected.hasil === "success" ? "Berhasil" : selected.hasil === "rejected" ? "Ditolak" : "Gagal"} /><span className="text-[11px] text-slate-400">{new Date(selected.created_at).toLocaleString("id-ID")}</span></div>
               <h3 className="mt-3 text-base font-bold">{ACTION_LABEL[selected.action] ?? selected.action}</h3>
-              <p className="mt-1 text-xs text-slate-500">{selected.table_name} • {selected.record_id}</p>
+              <p className="mt-1 text-xs text-slate-500">{TABLE_LABEL[selected.table_name] ?? selected.table_name} • {selected.record_id}</p>
             </div>
             <div className="mt-5 space-y-4 text-xs">
               <div><span className="text-slate-500">Pelaku</span><div className="mt-1 font-semibold">{selected.user?.nama ?? "Sistem"}</div></div>

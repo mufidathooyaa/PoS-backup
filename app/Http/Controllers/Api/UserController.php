@@ -83,7 +83,7 @@ class UserController extends Controller
             return response()->json(['message' => 'Anda tidak dapat memindahkan outlet akun Anda sendiri'], 422);
         }
 
-        $oldData = ['nama' => $user->nama, 'role_id' => $user->role_id, 'outlet_id' => $user->outlet_id];
+        $oldData = ['nama' => $user->nama, 'username' => $user->username, 'email' => $user->email, 'role_id' => $user->role_id, 'outlet_id' => $user->outlet_id];
 
         $user->fill($request->only(['nama', 'username', 'email', 'role_id', 'outlet_id']));
         if ($request->filled('password')) {
@@ -91,7 +91,7 @@ class UserController extends Controller
         }
         $user->save();
 
-        AuditLogger::log($request, 'update_user', 'users', $user->id, 'success', $oldData, ['nama' => $user->nama, 'role_id' => $user->role_id, 'outlet_id' => $user->outlet_id]);
+        AuditLogger::log($request, 'update_user', 'users', $user->id, 'success', $oldData, ['nama' => $user->nama, 'username' => $user->username, 'email' => $user->email, 'role_id' => $user->role_id, 'outlet_id' => $user->outlet_id]);
 
         return response()->json(['message' => 'Pengguna berhasil diperbarui', 'user' => $user->load('role', 'outlet')]);
     }
