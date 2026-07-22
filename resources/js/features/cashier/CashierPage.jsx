@@ -180,17 +180,20 @@ export function CashierPage() {
     toast(`${product.nama} ditambahkan ke keranjang`);
   };
 
+  const selectedMethodName = paymentMethods.find((m) => m.id === paymentMethodId)?.nama;
+  const isTunai = selectedMethodName === "Tunai";
+
   const subtotal = cart.reduce((s, p) => s + p.harga * p.qty, 0);
   const selectedDiscount = discountRules.find((d) => d.id === discountRuleId);
   const discountAmount = selectedDiscount
     ? (selectedDiscount.tipe === "persentase" ? Math.round(subtotal * (selectedDiscount.nilai / 100)) : Number(selectedDiscount.nilai))
     : 0;
   const dasarPajak = subtotal - discountAmount;
-  const taxAmount = taxRule ? Math.round(dasarPajak * (taxRule.persentase / 100)) : 0;
-  const grandTotalEstimate = dasarPajak + taxAmount;
+  const taxAmount = taxRule ? dasarPajak * (taxRule.persentase / 100) : 0;
+  const totalSebelumBulat = dasarPajak + taxAmount;
+  const grandTotalEstimate = isTunai ? Math.round(totalSebelumBulat / 500) * 500 : Math.round(totalSebelumBulat);
+  const pembulatanEstimate = grandTotalEstimate - totalSebelumBulat;
 
-  const selectedMethodName = paymentMethods.find((m) => m.id === paymentMethodId)?.nama;
-  const isTunai = selectedMethodName === "Tunai";
   const isQris = selectedMethodName === "QRIS";
 
   const validate = () => {
@@ -431,6 +434,9 @@ export function CashierPage() {
           <div className="space-y-1.5 text-xs">
             <div className="flex justify-between text-slate-500"><span>Subtotal</span><span>{formatIDR(subtotal)}</span></div>
             {discountAmount > 0 && <div className="flex justify-between text-emerald-600"><span>Diskon ({selectedDiscount?.nama})</span><span>-{formatIDR(discountAmount)}</span></div>}
+            {pembulatanEstimate !== 0 && (
+              <div className="flex justify-between text-slate-500"><span>Pembulatan</span><span>{pembulatanEstimate > 0 ? "+" : ""}{formatIDR(pembulatanEstimate)}</span></div>
+            )}
             <div className="flex justify-between text-slate-500"><span>Pajak {taxRule ? `(${taxRule.persentase}%)` : ""}</span><span>{formatIDR(taxAmount)}</span></div>
             <div className="flex justify-between border-t pt-2 text-sm font-bold"><span>Total</span><span>{formatIDR(grandTotalEstimate)}</span></div>
           </div>

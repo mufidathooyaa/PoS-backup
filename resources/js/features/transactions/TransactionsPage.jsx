@@ -199,7 +199,13 @@ export function TransactionsPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex justify-between text-sm font-bold"><span>Total</span><span>{formatIDR(selected.grand_total)}</span></div>
+            <div className="mt-4 space-y-1 text-xs text-slate-500">
+              <div className="flex justify-between"><span>Subtotal</span><span>{formatIDR(selected.subtotal)}</span></div>
+              {Number(selected.total_diskon) > 0 && <div className="flex justify-between"><span>Diskon</span><span>-{formatIDR(selected.total_diskon)}</span></div>}
+              {Number(selected.total_pajak) > 0 && <div className="flex justify-between"><span>Pajak</span><span>{formatIDR(selected.total_pajak)}</span></div>}
+              {Number(selected.pembulatan) !== 0 && <div className="flex justify-between"><span>Pembulatan</span><span>{Number(selected.pembulatan) > 0 ? "+" : ""}{formatIDR(selected.pembulatan)}</span></div>}
+            </div>
+            <div className="mt-2 flex justify-between border-t pt-2 text-sm font-bold"><span>Total</span><span>{formatIDR(selected.grand_total)}</span></div>
 
             {selected.status === "completed" && isAdmin && (
               <div className="mt-6 grid grid-cols-3 gap-2">

@@ -29,7 +29,7 @@ export function buildReceiptPdf(transaction) {
   const payment = transaction?.payments?.[0] ?? null;
 
   // Perkirakan tinggi halaman berdasarkan jumlah baris agar struk tidak terpotong
-  const baseHeight = 55; // header + footer
+  const baseHeight = 70; // header + footer + rincian subtotal/pajak/pembulatan
   const perItemHeight = 8; // nama produk + baris qty/total
   const paymentHeight = payment ? 14 : 4;
   const estimatedHeight = baseHeight + items.length * perItemHeight + paymentHeight;
@@ -80,6 +80,35 @@ export function buildReceiptPdf(transaction) {
     y += 4.5;
   });
 
+  drawDashedLine(doc, y);
+  y += 4.5;
+
+  doc.setFont("courier", "normal");
+  doc.setFontSize(7.5);
+  doc.text("Subtotal", MARGIN_X, y);
+  doc.text(formatIDR(transaction?.subtotal ?? 0), PAGE_WIDTH - MARGIN_X, y, { align: "right" });
+  y += 3.5;
+
+  if (Number(transaction?.total_diskon) > 0) {
+    doc.text("Diskon", MARGIN_X, y);
+    doc.text(`-${formatIDR(transaction.total_diskon)}`, PAGE_WIDTH - MARGIN_X, y, { align: "right" });
+    y += 3.5;
+  }
+
+  if (Number(transaction?.total_pajak) > 0) {
+    doc.text("Pajak", MARGIN_X, y);
+    doc.text(formatIDR(transaction.total_pajak), PAGE_WIDTH - MARGIN_X, y, { align: "right" });
+    y += 3.5;
+  }
+
+  if (Number(transaction?.pembulatan) !== 0) {
+    doc.text("Pembulatan", MARGIN_X, y);
+    const tanda = Number(transaction.pembulatan) > 0 ? "+" : "";
+    doc.text(`${tanda}${formatIDR(transaction.pembulatan)}`, PAGE_WIDTH - MARGIN_X, y, { align: "right" });
+    y += 3.5;
+  }
+
+  y += 1;
   drawDashedLine(doc, y);
   y += 4.5;
 

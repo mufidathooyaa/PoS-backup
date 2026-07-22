@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\Payment;
+use App\Models\PaymentMethod;
 use App\Models\StockMovement;
 use App\Models\Inventory;
 use App\Models\Product;
@@ -133,8 +134,20 @@ class TransactionController extends Controller
 
                 $dasarPajak = $subtotal - $totalDiskon;
                 $totalPajak = $taxRule ? $dasarPajak * ($taxRule->persentase / 100) : 0;
-                $grandTotal = $dasarPajak + $totalPajak;
+                $totalSebelumBulat = $dasarPajak + $totalPajak;
 
+                // Pembulatan HANYA berlaku untuk pembayaran Tunai (keterbatasan uang fisik di laci kasir).
+                // Metode digital seperti QRIS memakai angka pas, tanpa pembulatan.
+                $paymentMethod = PaymentMethod::find($request->payment_method_id);
+                $isTunai = $paymentMethod && $paymentMethod->nama === 'Tunai';
+
+                if ($isTunai) {
+                    $grandTotal = round($totalSebelumBulat / 500) * 500;
+                } else {
+                    $grandTotal = round($totalSebelumBulat, 2); // tetap dibulatkan ke 2 desimal saja, hindari sisa recehan pecahan sen
+                }
+                $pembulatan = $grandTotal - $totalSebelumBulat;
+                
                 // 6. Validasi pembayaran cukup
                 if ($request->jumlah_dibayar < $grandTotal) {
                     throw new \Exception('Jumlah pembayaran tidak mencukupi');
@@ -164,6 +177,7 @@ class TransactionController extends Controller
                     'subtotal' => $subtotal,
                     'total_diskon' => $totalDiskon,
                     'total_pajak' => $totalPajak,
+                    'pembulatan' => $pembulatan,
                     'grand_total' => $grandTotal,
                     'idempotency_key' => $request->idempotency_key,
                     'sync_status' => 'synced',

@@ -40,6 +40,13 @@ export function ReceiptModal({ open, transaction, onClose }) {
           </div>
         ))}
         <div className="my-3 border-t border-dashed" />
+        <div className="space-y-1 text-[11px] text-slate-500">
+          <div className="flex justify-between"><span>Subtotal</span><span>{formatIDR(transaction?.subtotal ?? 0)}</span></div>
+          {Number(transaction?.total_diskon) > 0 && <div className="flex justify-between"><span>Diskon</span><span>-{formatIDR(transaction.total_diskon)}</span></div>}
+          {Number(transaction?.total_pajak) > 0 && <div className="flex justify-between"><span>Pajak</span><span>{formatIDR(transaction.total_pajak)}</span></div>}
+          {Number(transaction?.pembulatan) !== 0 && <div className="flex justify-between"><span>Pembulatan</span><span>{Number(transaction?.pembulatan) > 0 ? "+" : ""}{formatIDR(transaction?.pembulatan)}</span></div>}
+        </div>
+        <div className="my-3 border-t border-dashed" />
         <div className="flex justify-between text-sm font-bold"><span>TOTAL</span><span>{formatIDR(transaction?.grand_total ?? 0)}</span></div>
         {transaction?.payments?.[0] && (
           <div className="mt-2 flex justify-between text-[11px] text-slate-500">

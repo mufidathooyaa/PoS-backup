@@ -32,6 +32,7 @@ return new class extends Migration
             $table->decimal('subtotal',15,2)->default(0);
             $table->decimal('total_pajak',15,2)->default(0);
             $table->decimal('total_diskon',15,2)->default(0);
+            $table->decimal('pembulatan',15,2)->default(0);
             $table->decimal('grand_total',15,2)->default(0);
 
             $table->text('void_reason')->nullable();
