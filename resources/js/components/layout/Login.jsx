@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { roleHome } from "../../config/permissions";
+import { PasswordInput } from "../ui/PasswordInput";
 
 export function Login() {
   const { user, login } = useAuth();
@@ -58,9 +59,7 @@ export function Login() {
               </div>
               <div>
                 <label className="label">Password</label>
-                <input
-                  className="input"
-                  type="password"
+                <PasswordInput
                   placeholder="Masukkan password"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(""); }}

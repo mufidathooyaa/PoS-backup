@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { menuByRole } from "../../config/menu";
 import { api, ApiError } from "../../lib/apiClient";
 import { Modal } from "../ui/Modal";
+import { PasswordInput } from "../ui/PasswordInput";
 
 export function AppShell() {
   const { user, logout, activeOutlet, setActiveOutlet } = useAuth();
@@ -110,6 +111,43 @@ export function AppShell() {
         </header>
         <main className="h-[calc(100vh-64px)] overflow-auto bg-canvas p-5"><Outlet context={{ online }} /></main>
       </section>
+
+      <Modal open={changePasswordOpen} title="Ganti Password" onClose={() => setChangePasswordOpen(false)}>
+        <form
+          className="space-y-4"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const formEl = e.currentTarget; // simpan referensi SEBELUM await — e.currentTarget jadi null setelah event selesai di-dispatch
+            const fd = new FormData(formEl);
+            const password_lama = fd.get("password_lama");
+            const password_baru = fd.get("password_baru");
+            const konfirmasi = fd.get("konfirmasi");
+            if (password_baru !== konfirmasi) {
+              toast("Konfirmasi password baru tidak cocok", "danger");
+              return;
+            }
+            setChangingPassword(true);
+            try {
+              await api.post("/me/change-password", { password_lama, password_baru });
+              toast("Password berhasil diubah");
+              setChangePasswordOpen(false);
+              formEl.reset();
+            } catch (err) {
+              toast(err instanceof ApiError ? err.message : "Gagal mengubah password", "danger");
+            } finally {
+              setChangingPassword(false);
+            }
+          }}
+        >
+          <div><label className="label">Password lama</label><PasswordInput name="password_lama" required /></div>
+          <div><label className="label">Password baru</label><PasswordInput name="password_baru" required minLength={6} /></div>
+          <div><label className="label">Konfirmasi password baru</label><PasswordInput name="konfirmasi" required minLength={6} /></div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" className="btn-secondary" onClick={() => setChangePasswordOpen(false)}>Batal</button>
+            <button className="btn-primary" disabled={changingPassword}>{changingPassword ? "Menyimpan..." : "Simpan Password"}</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

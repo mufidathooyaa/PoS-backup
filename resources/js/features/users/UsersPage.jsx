@@ -3,6 +3,7 @@ import { Archive, Boxes, Check, Pencil, Plus, Search, ShieldCheck, ShoppingCart 
 import { PageHeader } from "../../components/ui/PageHeader";
 import { Status } from "../../components/ui/Status";
 import { Modal } from "../../components/ui/Modal";
+import { PasswordInput } from "../../components/ui/PasswordInput";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { api } from "../../lib/apiClient";
@@ -156,7 +157,7 @@ export function UsersPage() {
           <div><label className="label">Email</label><input name="email" required type="email" className="input" defaultValue={editing?.email} /></div>
           <div>
             <label className="label">{editing ? "Password baru (kosongkan jika tidak diubah)" : "Password"}</label>
-            <input name="password" type="password" className="input" placeholder={editing ? "••••••••" : ""} />
+            <PasswordInput name="password" placeholder={editing ? "••••••••" : ""} />
           </div>
           <div>
             <label className="label">Role</label>

@@ -12,6 +12,7 @@ import { api, ApiError } from "../../lib/apiClient";
 import { BarcodeScannerModal } from "../../components/ui/BarcodeScannerModal";
 import qrisImage from "../../assets/qris.jpeg";
 import { downloadReceiptPdf } from "../../lib/receiptPdf";
+import { PasswordInput } from "../../components/ui/PasswordInput";
 
 export function CashierPage() {
   const { user } = useAuth();
@@ -592,7 +593,7 @@ export function CashierPage() {
           <form onSubmit={submitOverrideAuth}>
             <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-700">Perubahan harga memerlukan otorisasi Admin/Supervisor. Minta Admin memasukkan kredensialnya di sini.</div>
             <div className="mt-3"><label className="label">Username atau Email Admin</label><input className="input" value={overrideAdminLogin} onChange={(e) => setOverrideAdminLogin(e.target.value)} /></div>
-            <div className="mt-3"><label className="label">Password Admin</label><input type="password" className="input" value={overrideAdminPassword} onChange={(e) => setOverrideAdminPassword(e.target.value)} /></div>
+            <div className="mt-3"><label className="label">Password Admin</label><PasswordInput value={overrideAdminPassword} onChange={(e) => setOverrideAdminPassword(e.target.value)} /></div>
             <div className="mt-5 flex justify-end gap-2">
               <button type="button" className="btn-secondary" onClick={() => setOverrideStep("input")}>Kembali</button>
               <button className="btn-primary" disabled={overrideSubmitting}>{overrideSubmitting ? "Memverifikasi..." : "Otorisasi"}</button>
