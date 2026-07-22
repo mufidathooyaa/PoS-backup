@@ -116,12 +116,13 @@ export function OutletsPage() {
                   </td>
                   <td className="table-cell"><Status value={o.is_active ? "Aktif" : "Nonaktif"} /></td>
                   <td className="table-cell text-right">
-                    <button className="mr-2 rounded-md border p-2 hover:bg-slate-50" onClick={() => { setEditing(o); setModal(true); }}><Pencil size={14} /></button>
+                    <button className="mr-2 rounded-md border p-2 hover:bg-slate-50" onClick={() => { setEditing(o); setModal(true); }} aria-label={`Edit outlet ${o.nama}`}><Pencil size={14} /></button>
                     <button
                       className={`rounded-md border p-2 ${o.is_active ? "text-red-500" : "text-emerald-600"} ${isCurrentOutlet && o.is_active ? "cursor-not-allowed opacity-30" : ""}`}
                       disabled={isCurrentOutlet && o.is_active}
                       title={isCurrentOutlet && o.is_active ? "Tidak dapat menonaktifkan outlet tempat Anda login" : undefined}
                       onClick={() => toggleActive(o)}
+                      aria-label={o.is_active ? `Nonaktifkan outlet ${o.nama}` : `Aktifkan outlet ${o.nama}`}
                     >
                       {o.is_active ? <Archive size={14} /> : <Check size={14} />}
                     </button>

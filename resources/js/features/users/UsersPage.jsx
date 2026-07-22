@@ -134,11 +134,12 @@ export function UsersPage() {
                 <td className="table-cell">{u.outlet?.nama ?? "-"}</td>
                 <td className="table-cell"><Status value={u.is_active ? "Aktif" : "Nonaktif"} /></td>
                 <td className="table-cell text-right">
-                  <button className="mr-2 rounded-md border p-2 hover:bg-slate-50" onClick={() => { setEditing(u); setModal(true); }}><Pencil size={14} /></button>
+                  <button className="mr-2 rounded-md border p-2 hover:bg-slate-50" onClick={() => { setEditing(u); setModal(true); }} aria-label={`Edit pengguna ${u.nama}`}><Pencil size={14} /></button>
                   <button
-                    className={`rounded-md border p-2 ${u.active ? "text-red-500" : "text-emerald-600"} ${u.id === currentUser.id ? "cursor-not-allowed opacity-30" : ""}`}
+                    className={`rounded-md border p-2 ${u.is_active ? "text-red-500" : "text-emerald-600"} ${u.id === currentUser.id ? "cursor-not-allowed opacity-30" : ""}`}
                     disabled={u.id === currentUser.id}
                     onClick={() => toggleActive(u)}
+                    aria-label={u.is_active ? `Nonaktifkan pengguna ${u.nama}` : `Aktifkan pengguna ${u.nama}`}
                   >
                     {u.is_active ? <Archive size={14} /> : <Check size={14} />}
                   </button>

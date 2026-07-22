@@ -384,7 +384,7 @@ export function CashierPage() {
               <History size={15} />
               {heldList.length > 0 && <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-orange text-[9px] font-bold text-white">{heldList.length}</span>}
             </button>
-            <button title="Kosongkan keranjang" disabled={!cart.length} className="rounded-lg border p-2 text-red-500 hover:bg-red-50 disabled:opacity-30" onClick={() => setCancelConfirm(true)}><Trash2 size={15} /></button>
+            <button title="Kosongkan keranjang" aria-label="Kosongkan keranjang" disabled={!cart.length} className="rounded-lg border p-2 text-red-500 hover:bg-red-50 disabled:opacity-30" onClick={() => setCancelConfirm(true)}><Trash2 size={15} /></button>
           </div>
         </div>
         <div className="min-h-0 flex-1 overflow-auto p-4">
@@ -409,13 +409,13 @@ export function CashierPage() {
                           <button className="text-blue-500 underline" onClick={() => openOverride(p)}>Ubah Harga</button>
                         </div>
                       </div>
-                      <button className="text-slate-400 hover:text-red-500" onClick={() => setCart((c) => c.filter((x) => x.product_id !== p.product_id))}><X size={15} /></button>
+                      <button className="text-slate-400 hover:text-red-500" onClick={() => setCart((c) => c.filter((x) => x.product_id !== p.product_id))} aria-label={`Hapus ${p.nama} dari keranjang`}><X size={15} /></button>
                     </div>
                   <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center rounded-lg border">
-                      <button className="p-1.5" onClick={() => changeQty(p.product_id, -1)}><Minus size={13} /></button>
+                      <button className="p-1.5" onClick={() => changeQty(p.product_id, -1)} aria-label={`Kurangi jumlah ${p.nama}`}><Minus size={13} /></button>
                       <span className="w-8 text-center text-xs font-bold">{p.qty}</span>
-                      <button className="p-1.5" onClick={() => changeQty(p.product_id, 1)}><Plus size={13} /></button>
+                      <button className="p-1.5" onClick={() => changeQty(p.product_id, 1)} aria-label={`Tambah jumlah ${p.nama}`}><Plus size={13} /></button>
                     </div>
                     <span className="text-xs font-bold">{formatIDR(p.harga * p.qty)}</span>
                   </div>

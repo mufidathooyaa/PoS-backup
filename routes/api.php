@@ -86,12 +86,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/products/{id}/archive', [ProductController::class, 'archive']);
         Route::post('/products/{id}/reactivate', [ProductController::class, 'reactivate']);
         Route::post('/products/{id}/initial-stock', [ProductController::class, 'setInitialStock']);
+        Route::post('/products/{id}/stock-minimum', [ProductController::class, 'updateStockMinimum']);
     });
 
     Route::middleware('permission:adjust_stock')->group(function () {
         Route::get('/stock-movements', [StockMovementController::class, 'index']);
         Route::post('/products/{id}/stock-receipt', [StockMovementController::class, 'receipt']);
         Route::post('/products/{id}/stock-adjustment', [StockMovementController::class, 'adjustment']);
+        Route::post('/stock-opname', [StockMovementController::class, 'opname']);
+        Route::get('/inventory/low-stock', [ProductController::class, 'lowStock']);
+        Route::get('/inventory/low-stock/export', [ProductController::class, 'lowStockExport']);
     });
 
     Route::middleware('permission:approve_stock_adjustment')->group(function () {

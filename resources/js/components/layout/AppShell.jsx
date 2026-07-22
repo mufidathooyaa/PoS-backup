@@ -59,7 +59,7 @@ export function AppShell() {
       <section className="min-w-0 flex-1">
         <header className="flex h-16 items-center gap-4 border-b bg-white px-5">
           <button className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setCollapsed(!collapsed)}><Menu size={20} /></button>
-          <div className="relative max-w-xl flex-1"><Search size={16} className="absolute left-3 top-2.5 text-slate-400" /><input className="input pl-9" placeholder="Cari menu, transaksi, produk, atau laporan..." /></div>
+          <div className="relative max-w-xl flex-1"><Search size={16} className="absolute left-3 top-2.5 text-slate-400" /><input className="input pl-9" placeholder="Cari menu, transaksi, produk, atau laporan..." aria-label="Cari menu, transaksi, produk, atau laporan" /></div>
           <button onClick={toggleOnline} className={`hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold sm:flex ${online ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
             {online ? <Wifi size={15} /> : <WifiOff size={15} />} {online ? "Mode Online" : "Mode Offline"}
           </button>
@@ -94,14 +94,14 @@ export function AppShell() {
           )}
           
           <div className="relative">
-            <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }}><Bell size={19} /><span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-red-500 text-[9px] font-bold text-white">3</span></button>
+            <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }} aria-label="Notifikasi"><Bell size={19} /><span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-red-500 text-[9px] font-bold text-white">3</span></button>
             {notifOpen && <div className="absolute right-0 top-12 z-40 w-80 rounded-lg border bg-white p-2 shadow-xl">
               <div className="px-2 py-2 text-xs font-bold">Notifikasi terbaru</div>
               {["3 approval menunggu keputusan", "Stok Croissant Butter menipis", "1 transaksi menunggu sinkronisasi"].map((n, i) => <div key={n} className="flex gap-3 rounded-lg p-2 hover:bg-slate-50"><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${i === 0 ? "bg-orange" : "bg-blue-500"}`} /><span className="text-xs text-slate-600">{n}</span></div>)}
             </div>}
           </div>
           <div className="relative">
-            <button className="flex items-center gap-2" onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}><span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-xs font-bold text-white">{user.name.slice(0, 1)}</span><ChevronDown size={14} className="text-slate-400" /></button>
+            <button className="flex items-center gap-2" onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }} aria-label="Menu profil"><span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-xs font-bold text-white">{user.name.slice(0, 1)}</span><ChevronDown size={14} className="text-slate-400" /></button>
             {profileOpen && <div className="absolute right-0 top-12 z-40 w-64 rounded-lg border bg-white p-3 shadow-xl">
               <div className="border-b pb-3"><div className="text-sm font-bold">{user.role}</div><div className="mt-1 text-xs text-slate-500">{user.email}</div></div>
               <button className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50" onClick={() => { setChangePasswordOpen(true); setProfileOpen(false); }}><KeyRound size={15} /> Ganti Password</button>

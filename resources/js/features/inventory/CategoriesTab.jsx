@@ -79,7 +79,7 @@ export function CategoriesTab() {
                 <span className="grid h-9 w-9 place-items-center rounded-lg bg-violet-50 text-violet-600"><SlidersHorizontal size={16} /></span>
                 <div className="flex-1"><div className="text-xs font-bold">{c.nama}</div><div className="mt-1 text-[10px] text-slate-500">{productCounts[c.id] ?? 0} produk</div></div>
                 <Status value={c.is_active ? "Aktif" : "Nonaktif"} />
-                <button className="rounded-md border p-2" onClick={(e) => toggleActive(c, e)}>{c.is_active ? <X size={14} /> : <Check size={14} />}</button>
+                <button className="rounded-md border p-2" onClick={(e) => toggleActive(c, e)} aria-label={c.is_active ? `Nonaktifkan kategori ${c.nama}` : `Aktifkan kategori ${c.nama}`}>{c.is_active ? <X size={14} /> : <Check size={14} />}</button>
               </div>
               {isOpen && (
                 <div className="bg-slate-50 px-4 pb-3 pl-14">

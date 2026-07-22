@@ -9,6 +9,7 @@ use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use App\Services\AuditLogger;
 
 class StockMovementController extends Controller
@@ -222,5 +223,90 @@ class StockMovementController extends Controller
         AuditLogger::log($request, 'reject_stock_adjustment', 'stock_movements', $movement->id, 'success', ['status' => 'pending'], ['status' => 'rejected']);
 
         return response()->json(['message' => 'Pengajuan penyesuaian ditolak']);
+    }
+
+    // Sesi penghitungan inventaris (stock opname) — POSFR-15.
+    // Operator memasukkan hasil hitung fisik untuk banyak produk sekaligus dalam 1 sesi;
+    // hanya produk yang selisih dari hasil hitungnya != 0 yang menghasilkan movement.
+    // Produk dengan selisih 0 dianggap "sudah sesuai" dan tidak menghasilkan record apa pun.
+    public function opname(Request $request)
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'catatan_sesi' => 'required|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|uuid|exists:products,id',
+            'items.*.stok_fisik' => 'required|integer|min:0',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
+        }
+
+        $isAdmin = $user->role && $user->role->nama_peran === 'Admin';
+        $sessionId = (string) Str::uuid();
+
+        $hasilPenyesuaian = [];
+        $jumlahSesuai = 0;
+
+        DB::transaction(function () use ($request, $user, $isAdmin, $sessionId, &$hasilPenyesuaian, &$jumlahSesuai) {
+            foreach ($request->items as $item) {
+                $inventory = Inventory::where('product_id', $item['product_id'])
+                    ->where('outlet_id', $user->outlet_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $inventory) {
+                    continue; // produk belum punya catatan stok di outlet ini, lewati
+                }
+
+                $selisih = $item['stok_fisik'] - $inventory->stok_saat_ini;
+
+                if ($selisih === 0) {
+                    $jumlahSesuai++;
+                    continue;
+                }
+
+                $movement = StockMovement::create([
+                    'product_id' => $item['product_id'],
+                    'outlet_id' => $user->outlet_id,
+                    'user_id' => $user->id,
+                    'approved_by_user_id' => $isAdmin ? $user->id : null,
+                    'jenis_pergerakan' => 'penyesuaian',
+                    'jumlah' => $selisih,
+                    'source_type' => 'stock_opname',
+                    'source_id' => $sessionId,
+                    'status' => $isAdmin ? 'applied' : 'pending',
+                    'alasan' => "Stock opname: {$request->catatan_sesi}",
+                    'timestamp' => now(),
+                ]);
+
+                if ($isAdmin) {
+                    $inventory->update(['stok_saat_ini' => $item['stok_fisik']]);
+                }
+
+                $hasilPenyesuaian[] = $movement;
+            }
+        });
+
+        AuditLogger::log(
+            $request,
+            'stock_opname',
+            'stock_movements',
+            $sessionId,
+            'success',
+            null,
+            ['catatan_sesi' => $request->catatan_sesi, 'jumlah_disesuaikan' => count($hasilPenyesuaian), 'jumlah_sesuai' => $jumlahSesuai, 'status' => $isAdmin ? 'applied' : 'pending']
+        );
+
+        return response()->json([
+            'message' => $isAdmin
+                ? 'Sesi stock opname selesai, semua penyesuaian langsung diterapkan'
+                : 'Sesi stock opname dikirim, menunggu persetujuan Admin untuk item yang selisih',
+            'session_id' => $sessionId,
+            'jumlah_disesuaikan' => count($hasilPenyesuaian),
+            'jumlah_sesuai' => $jumlahSesuai,
+            'movements' => $hasilPenyesuaian,
+        ], 201);
     }
 }

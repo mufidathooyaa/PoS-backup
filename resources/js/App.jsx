@@ -31,12 +31,12 @@ export default function App() {
       <Route path="/laporan" element={<ProtectedRoute allowed={["Admin"]}><ReportsPage/></ProtectedRoute>}/>
       <Route path="/inventaris" element={<ProtectedRoute allowed={["Admin","Operator Inventaris"]}><InventoryPage/></ProtectedRoute>}/>
       <Route path="/audit-log" element={<ProtectedRoute allowed={["Admin"]}><AuditLogPage/></ProtectedRoute>}/>
+      <Route path="/observability" element={<ProtectedRoute allowed={["Admin"]}><ObservabilityPage/></ProtectedRoute>}/>
       <Route path="/unauthorized" element={<Unauthorized/>}/>
       <Route index element={<NavigateToHome/>}/>
       <Route path="*" element={<Navigate to="/unauthorized" replace/>}/>
     </Route>
     <Route path="*" element={<Navigate to="/login" replace/>}/>
-    <Route path="/observability" element={<ProtectedRoute allowed={["Admin"]}><ObservabilityPage/></ProtectedRoute>}/>
   </Routes></ToastProvider></AuthProvider>;
 }
 

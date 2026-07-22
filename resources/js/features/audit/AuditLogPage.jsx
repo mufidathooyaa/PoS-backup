@@ -31,6 +31,8 @@ const ACTION_LABEL = {
   update_outlet: "Ubah Data Outlet",
   activate_outlet: "Aktifkan Outlet",
   deactivate_outlet: "Nonaktifkan Outlet",
+  stock_opname: "Sesi Stock Opname",
+  update_stock_minimum: "Ubah Ambang Stok Minimum",
 };
 
 const TABLE_LABEL = {
@@ -79,7 +81,7 @@ export function AuditLogPage() {
   const totalHariIni = logs.length;
   const sukses = logs.filter((l) => l.hasil === "success").length;
   const gagal = logs.filter((l) => l.hasil !== "success").length;
-  const sensitif = logs.filter((l) => ["void_transaction", "refund_transaction", "stock_adjustment", "approve_stock_adjustment", "authorize_price_override", "apply_price_override"].includes(l.action)).length;
+  const sensitif = logs.filter((l) => ["void_transaction", "refund_transaction", "stock_adjustment", "approve_stock_adjustment", "authorize_price_override", "apply_price_override", "stock_opname"].includes(l.action)).length;
 
   return (
     <>

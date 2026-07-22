@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Inventory;
 use App\Models\StockMovement;
 use App\Services\AuditLogger;
+use App\Services\OutletContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -232,6 +233,88 @@ class ProductController extends Controller
         });
 
         return response()->json(['message' => 'Stok awal berhasil diatur'], 201);
+    }
+
+    // Ubah ambang stok rendah untuk produk ini di outlet user yang login.
+    // Dibatasi permission manage_products di route — sesuai AC POSFR-11 "perubahan ambang dibatasi berdasarkan peran".
+    public function updateStockMinimum(Request $request, string $id)
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'stok_minimum' => 'required|integer|min:0',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
+        }
+
+        $inventory = Inventory::where('product_id', $id)->where('outlet_id', $user->outlet_id)->first();
+        if (! $inventory) {
+            return response()->json(['message' => 'Stok produk ini belum diatur di outlet Anda. Atur stok awal terlebih dahulu.'], 422);
+        }
+
+        $ambangLama = $inventory->stok_minimum;
+        $inventory->update(['stok_minimum' => $request->stok_minimum]);
+
+        AuditLogger::log($request, 'update_stock_minimum', 'products', $id, 'success', ['stok_minimum' => $ambangLama], ['stok_minimum' => $request->stok_minimum]);
+
+        return response()->json(['message' => 'Ambang stok rendah diperbarui', 'inventory' => $inventory]);
+    }
+
+    // Daftar produk yang stoknya di bawah/sama dengan ambang minimum (POSFR-11)
+    public function lowStock(Request $request)
+    {
+        $outletId = OutletContext::resolve($request);
+
+        $rows = Inventory::with('product.category')
+            ->where('outlet_id', $outletId)
+            ->where('stok_minimum', '>', 0)
+            ->whereColumn('stok_saat_ini', '<=', 'stok_minimum')
+            ->whereHas('product', fn ($q) => $q->where('is_active', true)->where('track_stock', true))
+            ->get()
+            ->map(fn ($inv) => [
+                'product_id' => $inv->product->id,
+                'sku' => $inv->product->sku,
+                'nama' => $inv->product->nama,
+                'kategori' => $inv->product->category?->nama,
+                'stok_saat_ini' => $inv->stok_saat_ini,
+                'stok_minimum' => $inv->stok_minimum,
+            ]);
+
+        return response()->json(['produk' => $rows]);
+    }
+
+    // Ekspor CSV daftar stok rendah (AC POSFR-11: "dapat diekspor")
+    public function lowStockExport(Request $request)
+    {
+        $outletId = OutletContext::resolve($request);
+
+        $rows = Inventory::with('product.category')
+            ->where('outlet_id', $outletId)
+            ->where('stok_minimum', '>', 0)
+            ->whereColumn('stok_saat_ini', '<=', 'stok_minimum')
+            ->whereHas('product', fn ($q) => $q->where('is_active', true)->where('track_stock', true))
+            ->get();
+
+        $callback = function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['SKU', 'Nama Produk', 'Kategori', 'Stok Saat Ini', 'Stok Minimum']);
+            foreach ($rows as $inv) {
+                fputcsv($out, [
+                    $inv->product->sku,
+                    $inv->product->nama,
+                    $inv->product->category?->nama,
+                    $inv->stok_saat_ini,
+                    $inv->stok_minimum,
+                ]);
+            }
+            fclose($out);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="stok-rendah-' . now()->format('Y-m-d') . '.csv"',
+        ]);
     }
 
     // Endpoint katalog untuk kasir — hanya produk aktif + stok di outlet kasir sendiri

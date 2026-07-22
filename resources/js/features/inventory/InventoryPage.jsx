@@ -9,12 +9,14 @@ import { CategoriesTab } from "./CategoriesTab";
 import { StockReceipt } from "./StockReceipt";
 import { StockAdjustment } from "./StockAdjustment";
 import { StockMovements } from "./StockMovements";
+import { LowStock } from "./LowStock";
+import { StockOpname } from "./StockOpname";
 import { useLocation } from "react-router-dom";
 
 export function InventoryPage() {
   const { user } = useAuth();
   const isAdmin = user.role === "Admin";
-  const tabs = ["Ringkasan", "Produk", "Kategori", "Penerimaan Stok", "Penyesuaian Stok", "Pergerakan Stok"];
+  const tabs = ["Ringkasan", "Produk", "Kategori", "Penerimaan Stok", "Penyesuaian Stok", "Stock Opname", "Stok Rendah", "Pergerakan Stok"];
   const location = useLocation();
   const [tab, setTab] = useState(location.state?.tab ?? "Ringkasan");
   const [unauthorized, setUnauthorized] = useState(false);
@@ -39,6 +41,8 @@ export function InventoryPage() {
       {tab === "Kategori" && <CategoriesTab />}
       {tab === "Penerimaan Stok" && <StockReceipt />}
       {tab === "Penyesuaian Stok" && <StockAdjustment />}
+      {tab === "Stock Opname" && <StockOpname />}
+      {tab === "Stok Rendah" && <LowStock />}
       {tab === "Pergerakan Stok" && <StockMovements />}
       <Modal open={unauthorized} title="Akses Ditolak" onClose={() => setUnauthorized(false)} width="max-w-md">
         <div className="text-center">
