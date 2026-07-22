@@ -22,6 +22,7 @@ class PermissionSeeder extends Seeder
             'view_audit_logs',
             'approve_stock_adjustment',
             'review_shift_variance',
+            'view_observability',
         ];
 
         foreach ($permissions as $nama) {

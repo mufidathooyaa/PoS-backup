@@ -16,6 +16,7 @@ import { CashierPage } from "./features/cashier/CashierPage";
 import { ReportsPage } from "./features/reports/ReportsPage";
 import { InventoryPage } from "./features/inventory/InventoryPage";
 import { AuditLogPage } from "./features/audit/AuditLogPage";
+import { ObservabilityPage } from "./features/observability/ObservabilityPage";
 
 export default function App() {
   return <AuthProvider><ToastProvider><Routes>
@@ -35,6 +36,7 @@ export default function App() {
       <Route path="*" element={<Navigate to="/unauthorized" replace/>}/>
     </Route>
     <Route path="*" element={<Navigate to="/login" replace/>}/>
+    <Route path="/observability" element={<ProtectedRoute allowed={["Admin"]}><ObservabilityPage/></ProtectedRoute>}/>
   </Routes></ToastProvider></AuthProvider>;
 }
 

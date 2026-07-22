@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\Api\TransactionController;
@@ -15,8 +16,10 @@ use App\Http\Controllers\Api\DiscountRuleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\OutletController;
+use App\Http\Controllers\Api\ObservabilityController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/health', [HealthController::class, 'check']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -107,6 +110,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('permission:view_audit_logs')
         ->get('/audit-logs', [AuditLogController::class, 'index']);
+    
+    Route::middleware('permission:view_observability')
+        ->get('/observability/summary', [ObservabilityController::class, 'summary']);
     
     Route::middleware('permission:manage_outlets')->group(function () {
         Route::get('/outlets', [OutletController::class, 'index']);

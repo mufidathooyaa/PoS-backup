@@ -1,5 +1,5 @@
 import {
-  BarChart3, Boxes, Clock3, LayoutDashboard, ReceiptText, ShieldCheck, ShoppingCart, Store, UserCog,
+  BarChart3, Boxes, Clock3, LayoutDashboard, ReceiptText, ShieldCheck, ShoppingCart, Store, UserCog, Activity,
 } from "lucide-react";
 
 export const menuByRole = {
@@ -12,6 +12,7 @@ export const menuByRole = {
     ["Laporan", "/laporan", BarChart3],
     ["Inventaris", "/inventaris", Boxes], 
     ["Audit Log", "/audit-log", ShieldCheck],
+    ["Observability", "/observability", Activity],
   ],
   Kasir: [["Transaksi", "/transaksi/kasir", ShoppingCart], ["Shift", "/shift", Clock3]],
   "Operator Inventaris": [["Inventaris", "/inventaris", Boxes]],
