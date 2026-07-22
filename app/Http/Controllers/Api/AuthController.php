@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -93,9 +94,11 @@ class AuthController extends Controller
         $admin = User::where('username', $request->login)->orWhere('email', $request->login)->first();
 
         if (! $admin || ! Hash::check($request->password, $admin->password_hash)) {
+            AuditLogger::log($request, 'authorize_price_override', 'products', $request->product_id, 'failed', null, ['login_dicoba' => $request->login, 'alasan_gagal' => 'kredensial salah']);
             return response()->json(['message' => 'Username/email atau password salah'], 401);
         }
         if (! $admin->is_active) {
+            AuditLogger::log($request, 'authorize_price_override', 'products', $request->product_id, 'failed', null, ['login_dicoba' => $request->login, 'alasan_gagal' => 'akun nonaktif'], $admin->id);
             return response()->json(['message' => 'Akun tidak aktif'], 403);
         }
 
@@ -104,6 +107,7 @@ class AuthController extends Controller
         })->exists();
 
         if (! $hasPermission) {
+            AuditLogger::log($request, 'authorize_price_override', 'products', $request->product_id, 'failed', null, ['login_dicoba' => $request->login, 'alasan_gagal' => 'tidak punya izin override_price'], $admin->id);
             return response()->json(['message' => 'Akun ini tidak memiliki izin mengubah harga'], 403);
         }
 
@@ -115,6 +119,17 @@ class AuthController extends Controller
             'harga_baru' => $request->harga_baru,
             'alasan' => $request->alasan,
         ], now()->addMinutes(10));
+
+        AuditLogger::log(
+            $request,
+            'authorize_price_override',
+            'products',
+            $request->product_id,
+            'success',
+            null,
+            ['harga_baru' => $request->harga_baru, 'alasan' => $request->alasan, 'kasir_id' => $request->user()->id, 'kasir_nama' => $request->user()->nama],
+            $admin->id,
+        );
 
         return response()->json([
             'message' => "Diotorisasi oleh {$admin->nama}",
@@ -145,7 +160,7 @@ class AuthController extends Controller
         // Logout dari semua sesi lain demi keamanan, kecuali token yang sedang dipakai saat ini
         $user->tokens()->where('id', '!=', $request->user()->currentAccessToken()->id)->delete();
 
-        \App\Services\AuditLogger::log($request, 'change_own_password', 'users', $user->id, 'success', null, null);
+        AuditLogger::log($request, 'change_own_password', 'users', $user->id, 'success', null, null);
 
         return response()->json(['message' => 'Password berhasil diubah']);
     }

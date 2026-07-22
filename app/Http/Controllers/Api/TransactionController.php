@@ -197,9 +197,23 @@ class TransactionController extends Controller
                         'diskon' => 0,
                         'pajak' => 0,
                         'total_baris' => $data['total_baris'],
+                        // SESUDAH
                         'alasan_override' => $data['override_info']['alasan'] ?? null,
                         'override_approved_by_user_id' => $data['override_info']['approved_by_user_id'] ?? null,
                     ]);
+
+                    if ($data['override_info']) {
+                        AuditLogger::log(
+                            $request,
+                            'apply_price_override',
+                            'transactions',
+                            $transaction->id,
+                            'success',
+                            ['harga_normal' => $product->harga],
+                            ['harga_dipakai' => $data['harga_satuan'], 'alasan' => $data['override_info']['alasan'], 'product_id' => $product->id, 'product_nama' => $product->nama, 'kasir_id' => $user->id],
+                            $data['override_info']['approved_by_user_id'],
+                        );
+                    }
 
                     if ($product->track_stock) {
                         StockMovement::create([

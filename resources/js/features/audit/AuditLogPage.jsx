@@ -19,6 +19,9 @@ const ACTION_LABEL = {
   stock_adjustment_request: "Pengajuan Penyesuaian Stok",
   approve_stock_adjustment: "Setujui Penyesuaian Stok",
   reject_stock_adjustment: "Tolak Penyesuaian Stok",
+  authorize_price_override: "Otorisasi Override Harga",
+  apply_price_override: "Terapkan Override Harga",
+  change_own_password: "Ganti Password Sendiri",
 };
 
 export function AuditLogPage() {
@@ -58,7 +61,7 @@ export function AuditLogPage() {
   const totalHariIni = logs.length;
   const sukses = logs.filter((l) => l.hasil === "success").length;
   const gagal = logs.filter((l) => l.hasil !== "success").length;
-  const sensitif = logs.filter((l) => ["void_transaction", "refund_transaction", "stock_adjustment", "approve_stock_adjustment"].includes(l.action)).length;
+  const sensitif = logs.filter((l) => ["void_transaction", "refund_transaction", "stock_adjustment", "approve_stock_adjustment", "authorize_price_override", "apply_price_override"].includes(l.action)).length;
 
   return (
     <>

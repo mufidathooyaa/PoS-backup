@@ -15,9 +15,10 @@ class AuditLogger
         string $hasil = 'success',
         ?array $oldValues = null,
         ?array $newValues = null,
+        ?string $actorId = null,
     ): AuditLog {
         return AuditLog::create([
-            'user_id' => $request->user()?->id,
+            'user_id' => $actorId ?? $request->user()?->id,
             'action' => $action,
             'table_name' => $tableName,
             'record_id' => $recordId,
