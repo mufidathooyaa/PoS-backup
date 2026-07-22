@@ -6,11 +6,14 @@ import { Kpi } from "../../components/ui/Kpi";
 import { useToast } from "../../context/ToastContext";
 import { formatIDR } from "../../mockData";
 import { api } from "../../lib/apiClient";
+import { useAuth } from "../../context/AuthContext"; 
 
 const PAYMENT_COLORS = ["#F97316", "#2563EB", "#10B981", "#8B5CF6"];
 
 export function ReportsPage() {
   const toast = useToast();
+  const { user, activeOutlet } = useAuth();
+  const isAdmin = user?.role === "Admin";
   const [range, setRange] = useState("today");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,14 +40,16 @@ export function ReportsPage() {
   const loadReport = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/reports/daily", getDateRange());
+      const params = getDateRange();
+      if (isAdmin) params.outlet_id = activeOutlet?.id;
+      const res = await api.get("/reports/daily", params);
       setReport(res);
     } catch (err) {
       toast(err.message || "Gagal memuat laporan", "danger");
     } finally {
       setLoading(false);
     }
-  }, [getDateRange, toast]);
+  }, [getDateRange, toast, isAdmin, activeOutlet]);
 
   useEffect(() => { loadReport(); }, [loadReport]);
 
@@ -59,7 +64,10 @@ export function ReportsPage() {
       }
 
       const results = await Promise.all(
-        days.map((tanggal) => api.get("/reports/daily", { tanggal_mulai: tanggal, tanggal_selesai: tanggal }))
+        days.map((tanggal) => api.get("/reports/daily", {
+          tanggal_mulai: tanggal, tanggal_selesai: tanggal,
+          ...(isAdmin ? { outlet_id: activeOutlet?.id } : {}),
+        }))
       );
 
       const data = results.map((res, i) => ({
@@ -72,7 +80,7 @@ export function ReportsPage() {
     } finally {
       setLoadingTrend(false);
     }
-  }, [toast]);
+  }, [toast, isAdmin, activeOutlet]);
 
   useEffect(() => { loadTrend(); }, [loadTrend]);
 
@@ -80,7 +88,7 @@ export function ReportsPage() {
     setLoadingShiftSummary(true);
     try {
       const [shiftsRes, pendingRes] = await Promise.all([
-        api.get("/shifts"), // default: hari ini
+        api.get("/shifts", isAdmin ? { outlet_id: activeOutlet?.id } : {}),
         api.get("/stock-adjustments/pending"),
       ]);
 
@@ -95,7 +103,7 @@ export function ReportsPage() {
     } finally {
       setLoadingShiftSummary(false);
     }
-  }, [toast]);
+  }, [toast, isAdmin, activeOutlet]);
 
   useEffect(() => { loadShiftSummary(); }, [loadShiftSummary]);
 
@@ -104,7 +112,9 @@ export function ReportsPage() {
     try {
       const { tanggal_mulai, tanggal_selesai } = getDateRange();
       const token = localStorage.getItem("pos_token");
-      const response = await fetch(`/api/reports/daily/export?tanggal_mulai=${tanggal_mulai}&tanggal_selesai=${tanggal_selesai}`, {
+      const outletParam = isAdmin && activeOutlet?.id ? `&outlet_id=${activeOutlet.id}` : "";
+      const response = await fetch(`/api/reports/daily/export?tanggal_mulai=${tanggal_mulai}&tanggal_selesai=${tanggal_selesai}${outletParam}`, 
+      {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Gagal mengekspor laporan");

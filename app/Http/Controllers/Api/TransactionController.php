@@ -240,7 +240,7 @@ class TransactionController extends Controller
         $query = Transaction::with('cashier')->orderByDesc('timestamp');
 
         if ($user->role && $user->role->nama_peran === 'Admin') {
-            $query->where('outlet_id', $user->outlet_id);
+            $query->where('outlet_id', \App\Services\OutletContext::resolve($request));
         } else {
             $query->where('cashier_id', $user->id);
         }
@@ -403,7 +403,7 @@ class TransactionController extends Controller
 
         $baseQuery = Transaction::query();
         if ($user->role && $user->role->nama_peran === 'Admin') {
-            $baseQuery->where('outlet_id', $user->outlet_id);
+            $baseQuery->where('outlet_id', \App\Services\OutletContext::resolve($request));
         } else {
             $baseQuery->where('cashier_id', $user->id);
         }

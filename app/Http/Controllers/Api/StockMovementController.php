@@ -18,7 +18,7 @@ class StockMovementController extends Controller
         $user = $request->user();
 
         $query = StockMovement::with('product', 'user', 'approvedBy')
-            ->where('outlet_id', $user->outlet_id)
+            ->where('outlet_id', \App\Services\OutletContext::resolve($request))
             ->orderByDesc('timestamp');
 
         if ($request->filled('jenis_pergerakan')) {

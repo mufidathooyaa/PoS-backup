@@ -10,7 +10,7 @@ import { formatIDR } from "../../mockData";
 import { api, ApiError } from "../../lib/apiClient";
 
 export function ShiftPage() {
-  const { user } = useAuth();
+  const { user, activeOutlet } = useAuth();
   const toast = useToast();
 
   const [currentShift, setCurrentShift] = useState(null);
@@ -25,7 +25,10 @@ export function ShiftPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [listRes] = await Promise.all([api.get("/shifts")]);
+      const isAdmin = user?.role === "Admin";
+      const [listRes] = await Promise.all([
+        api.get("/shifts",  isAdmin ? { outlet_id: activeOutlet?.id } : {}),
+      ]);
       setShiftList(listRes.shifts);
 
       // Jika yang login Admin, tarik juga data shift yang pending review
@@ -48,7 +51,7 @@ export function ShiftPage() {
       }
     }
     setLoading(false);
-  }, [toast, user]);
+  }, [toast, user, activeOutlet]);
 
   useEffect(() => {
     loadData();

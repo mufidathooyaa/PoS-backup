@@ -130,7 +130,7 @@ class ShiftController extends Controller
 
         // Admin bisa lihat semua kasir di outletnya; selain admin hanya lihat shift miliknya sendiri
         if ($user->role && $user->role->nama_peran === 'Admin') {
-            $query->where('outlet_id', $user->outlet_id);
+            $query->where('outlet_id', \App\Services\OutletContext::resolve($request));
         } else {
             $query->where('user_id', $user->id);
         }

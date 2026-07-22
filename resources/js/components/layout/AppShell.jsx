@@ -1,11 +1,23 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, LogOut, Menu, Search, Wifi, WifiOff } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, Search, Store, Wifi, WifiOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { menuByRole } from "../../config/menu";
+import { api } from "../../lib/apiClient";
 
 export function AppShell() {
-  const { user, logout } = useAuth();
+  const { user, logout, activeOutlet, setActiveOutlet } = useAuth();
+  const [outletSwitcherOpen, setOutletSwitcherOpen] = useState(false);
+  const [outlets, setOutlets] = useState([]);
+  const isAdmin = user.role === "Admin";
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    api.get("/outlets").then((res) => setOutlets(res.outlets)).catch(() => {});
+  }, [isAdmin]);
+
+  const currentOutletName = activeOutlet?.nama ?? user.outlet_nama;
+
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -37,6 +49,7 @@ export function AppShell() {
           </div>
         </div>
       </aside>
+
       <section className="min-w-0 flex-1">
         <header className="flex h-16 items-center gap-4 border-b bg-white px-5">
           <button className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setCollapsed(!collapsed)}><Menu size={20} /></button>
@@ -44,7 +57,36 @@ export function AppShell() {
           <button onClick={toggleOnline} className={`hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold sm:flex ${online ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
             {online ? <Wifi size={15} /> : <WifiOff size={15} />} {online ? "Mode Online" : "Mode Offline"}
           </button>
-          <button className="hidden h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-700 md:flex">{user.outlet_nama} <ChevronDown size={14} /></button>
+
+          {isAdmin ? (
+            <div className="relative hidden md:block">
+              <button
+                className="flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                onClick={() => { setOutletSwitcherOpen(!outletSwitcherOpen); setProfileOpen(false); setNotifOpen(false); }}
+              >
+                <Store size={14} className="text-slate-400" /> {currentOutletName} <ChevronDown size={14} />
+              </button>
+              {outletSwitcherOpen && (
+                <div className="absolute right-0 top-12 z-40 w-56 rounded-lg border bg-white p-2 shadow-xl">
+                  <div className="px-2 py-1.5 text-[11px] font-bold uppercase text-slate-400">Lihat data outlet</div>
+                  {outlets.map((o) => (
+                    <button
+                      key={o.id}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium hover:bg-slate-50 ${o.id === (activeOutlet?.id ?? user.outlet_id) ? "text-orange" : "text-slate-600"}`}
+                      onClick={() => { setActiveOutlet({ id: o.id, nama: o.nama }); setOutletSwitcherOpen(false); }}
+                    >
+                      <Store size={13} /> {o.nama}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="hidden h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-500 md:flex">
+              <Store size={14} className="text-slate-400" /> {currentOutletName}
+            </div>
+          )}
+          
           <div className="relative">
             <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }}><Bell size={19} /><span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-red-500 text-[9px] font-bold text-white">3</span></button>
             {notifOpen && <div className="absolute right-0 top-12 z-40 w-80 rounded-lg border bg-white p-2 shadow-xl">

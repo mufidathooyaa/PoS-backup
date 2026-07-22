@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useToast } from "../../context/ToastContext";
 import { api } from "../../lib/apiClient";
+import { useAuth } from "../../context/AuthContext";
 
 const JENIS_LABEL = {
   penjualan: "Penjualan",
@@ -11,6 +12,7 @@ const JENIS_LABEL = {
 };
 
 export function StockMovements() {
+  const { user, activeOutlet } = useAuth();
   const toast = useToast();
   const [movements, setMovements] = useState([]);
   const [filterJenis, setFilterJenis] = useState("");
@@ -18,15 +20,24 @@ export function StockMovements() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+
     try {
-      const res = await api.get("/stock-movements", filterJenis ? { jenis_pergerakan: filterJenis } : {});
+      const params = filterJenis
+        ? { jenis_pergerakan: filterJenis }
+        : {};
+
+      if (user?.role === "Admin") {
+        params.outlet_id = activeOutlet?.id;
+      }
+
+      const res = await api.get("/stock-movements", params);
       setMovements(res.movements.data);
     } catch (err) {
       toast(err.message || "Gagal memuat pergerakan stok", "danger");
     } finally {
       setLoading(false);
     }
-  }, [toast, filterJenis]);
+  }, [toast, filterJenis, user, activeOutlet]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

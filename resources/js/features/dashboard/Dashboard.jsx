@@ -8,6 +8,7 @@ import { Status } from "../../components/ui/Status";
 import { useToast } from "../../context/ToastContext";
 import { formatIDR } from "../../mockData";
 import { api } from "../../lib/apiClient";
+import { useAuth } from "../../context/AuthContext";
 
 const ACTION_LABEL = {
   void_transaction: "Void Transaksi", refund_transaction: "Refund Transaksi", archive_product: "Arsipkan Produk",
@@ -20,6 +21,7 @@ const ACTION_LABEL = {
 export function Dashboard() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { activeOutlet } = useAuth();
 
   const [today, setToday] = useState(null);
   const [yesterday, setYesterday] = useState(null);
@@ -41,13 +43,14 @@ export function Dashboard() {
       const trendDays = [];
       for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); trendDays.push(d.toISOString().slice(0, 10)); }
 
+      const outletParam = activeOutlet?.id ? { outlet_id: activeOutlet.id } : {};
+
       const [todayRes, yesterdayRes, trendRes, catalogRes, shiftsRes, auditsRes, pendingRes, pendingShiftRes] = await Promise.all([
-        api.get("/reports/daily", { tanggal_mulai: todayStr, tanggal_selesai: todayStr }),
-        api.get("/reports/daily", { tanggal_mulai: yesterdayStr, tanggal_selesai: yesterdayStr }),
-        Promise.all(trendDays.map((d) => api.get("/reports/daily", { tanggal_mulai: d, tanggal_selesai: d }))),
+        api.get("/reports/daily", { tanggal_mulai: todayStr, tanggal_selesai: todayStr, ...outletParam }),
+        api.get("/reports/daily", { tanggal_mulai: yesterdayStr, tanggal_selesai: yesterdayStr, ...outletParam }),
+        Promise.all(trendDays.map((d) => api.get("/reports/daily", { tanggal_mulai: d, tanggal_selesai: d, ...outletParam }))),
         api.get("/catalog"),
-        api.get("/shifts"),
-        // Tangkap error diam-diam agar jika Kasir yang login, Dashboard tidak crash karena error 403 Forbidden
+        api.get("/shifts", outletParam),
         api.get("/audit-logs").catch(() => ({ logs: { data: [] } })),
         api.get("/stock-adjustments/pending").catch(() => ({ pending: [] })),
         api.get("/shifts/pending-review").catch(() => ({ shifts: [] })),
@@ -66,7 +69,7 @@ export function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, activeOutlet]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 

@@ -13,6 +13,19 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(false);
 
+  const [activeOutlet, setActiveOutletState] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("pos_active_outlet"));
+    } catch {
+      return null;
+    }
+  });
+
+  const setActiveOutlet = (outlet) => {
+    localStorage.setItem("pos_active_outlet", JSON.stringify(outlet));
+    setActiveOutletState(outlet);
+  };
+
   const login = async (loginInput, password) => {
     setLoading(true);
     try {
@@ -29,6 +42,7 @@ export function AuthProvider({ children }) {
 
       localStorage.setItem("pos_token", data.token);
       localStorage.setItem("pos_user", JSON.stringify(safeUser));
+      setActiveOutlet({ id: safeUser.outlet_id, nama: safeUser.outlet_nama });
       setUser(safeUser);
       return safeUser;
     } catch (err) {
@@ -47,11 +61,12 @@ export function AuthProvider({ children }) {
     }
     localStorage.removeItem("pos_token");
     localStorage.removeItem("pos_user");
+    localStorage.removeItem("pos_active_outlet");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, activeOutlet, setActiveOutlet }}>
       {children}
     </AuthContext.Provider>
   );

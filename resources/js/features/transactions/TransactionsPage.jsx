@@ -15,7 +15,7 @@ import { ReceiptModal } from "./ReceiptModal";
 const STATUS_LABEL = { completed: "Berhasil", void: "Dibatalkan", refunded: "Refund", hold: "Ditahan", pending: "Pending" };
 
 export function TransactionsPage() {
-  const { user } = useAuth();
+  const { user, activeOutlet } = useAuth();
   const toast = useToast();
   const isAdmin = user.role === "Admin";
 
@@ -42,9 +42,10 @@ export function TransactionsPage() {
       const params = {};
       if (search) params.search = search;
       if (statusFilter) params.status = statusFilter;
+      if (isAdmin) params.outlet_id = activeOutlet?.id;
       const [listRes, summaryRes] = await Promise.all([
         api.get("/transactions", params),
-        api.get("/transactions/summary"),
+        api.get("/transactions/summary", isAdmin ? { outlet_id: activeOutlet?.id } : {}),
       ]);
       setTransactions(listRes.transactions.data);
       setSummary(summaryRes);
@@ -53,7 +54,7 @@ export function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast, search, statusFilter]);
+  }, [toast, search, statusFilter, isAdmin, activeOutlet]);
 
   useEffect(() => { loadList(); }, [loadList]);
 

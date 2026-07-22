@@ -49,7 +49,7 @@ class AuthController extends Controller
                 'username' => $user->username,
                 'role' => $user->role->nama_peran,
                 'outlet_id' => $user->outlet_id,
-                'outlet_nam' => $user->outlet->nama,
+                'outlet_nama' => $user->outlet->nama,
             ],
             'token' => $token,
         ]);
