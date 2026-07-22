@@ -170,7 +170,6 @@ export function CashierPage() {
   };
 
   const handleBarcodeDetected = (barcodeText) => {
-    setScannerOpen(false);
     const product = catalog.find((p) => p.barcode === barcodeText);
     if (!product) {
       toast(`Produk dengan barcode "${barcodeText}" tidak ditemukan`, "danger");
