@@ -17,12 +17,13 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\OutletController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-    Route::post('/price-overrides/authorize', [AuthController::class, 'authorizePriceOverride']);
+    Route::post('/me/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/price-overrides/authorize', [AuthController::class, 'authorizePriceOverride'])->middleware('throttle:6,1');
 
     // ==========================================
     // Katalog (semua role yang login)

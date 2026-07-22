@@ -122,4 +122,31 @@ class AuthController extends Controller
             'nama_admin' => $admin->nama,
         ]);
     }
+
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'password_lama' => 'required|string',
+            'password_baru' => 'required|string|min:6|different:password_lama',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+
+        if (! Hash::check($request->password_lama, $user->password_hash)) {
+            return response()->json(['message' => 'Password lama tidak sesuai'], 422);
+        }
+
+        $user->password_hash = $request->password_baru; // otomatis di-hash oleh cast 'hashed'
+        $user->save();
+
+        // Logout dari semua sesi lain demi keamanan, kecuali token yang sedang dipakai saat ini
+        $user->tokens()->where('id', '!=', $request->user()->currentAccessToken()->id)->delete();
+
+        \App\Services\AuditLogger::log($request, 'change_own_password', 'users', $user->id, 'success', null, null);
+
+        return response()->json(['message' => 'Password berhasil diubah']);
+    }
 }

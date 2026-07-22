@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, LogOut, Menu, Search, Store, Wifi, WifiOff } from "lucide-react";
+import { Bell, ChevronDown, KeyRound, LogOut, Menu, Search, Store, Wifi, WifiOff } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import { menuByRole } from "../../config/menu";
-import { api } from "../../lib/apiClient";
+import { api, ApiError } from "../../lib/apiClient";
+import { Modal } from "../ui/Modal";
 
 export function AppShell() {
   const { user, logout, activeOutlet, setActiveOutlet } = useAuth();
   const [outletSwitcherOpen, setOutletSwitcherOpen] = useState(false);
   const [outlets, setOutlets] = useState([]);
   const isAdmin = user.role === "Admin";
+  const toast = useToast();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -98,6 +103,7 @@ export function AppShell() {
             <button className="flex items-center gap-2" onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}><span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-xs font-bold text-white">{user.name.slice(0, 1)}</span><ChevronDown size={14} className="text-slate-400" /></button>
             {profileOpen && <div className="absolute right-0 top-12 z-40 w-64 rounded-lg border bg-white p-3 shadow-xl">
               <div className="border-b pb-3"><div className="text-sm font-bold">{user.role}</div><div className="mt-1 text-xs text-slate-500">{user.email}</div></div>
+              <button className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50" onClick={() => { setChangePasswordOpen(true); setProfileOpen(false); }}><KeyRound size={15} /> Ganti Password</button>
               <button className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-red-600 hover:bg-red-50" onClick={() => { logout(); navigate("/login"); }}><LogOut size={15} /> Logout</button>
             </div>}
           </div>
