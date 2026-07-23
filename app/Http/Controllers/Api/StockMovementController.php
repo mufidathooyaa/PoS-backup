@@ -163,7 +163,7 @@ class StockMovementController extends Controller
                 })->get();
 
             // Menggunakan $user->name dan $product->nama
-            Notification::send($admins, new StockApprovalNotification($user->name, $product->nama, 'Penyesuaian Manual', $movement->id));
+            Notification::send($admins, new StockApprovalNotification($user->nama, $product->nama, 'Penyesuaian Manual', $movement->id));
         }
 
         return response()->json([
@@ -357,7 +357,7 @@ class StockMovementController extends Controller
                     $q->where('nama_peran', 'Admin');
                 })->get();
 
-            Notification::send($admins, new StockApprovalNotification($user->name, count($hasilPenyesuaian) . ' Item Produk', 'Stock Opname', $sessionId));
+            Notification::send($admins, new StockApprovalNotification($user->nama, count($hasilPenyesuaian) . ' Item Produk', 'Stock Opname', $sessionId));
         }
 
         return response()->json([

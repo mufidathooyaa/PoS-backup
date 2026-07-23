@@ -86,8 +86,21 @@ class TransactionController extends Controller
                             throw new \Exception("Stok untuk produk '{$product->nama}' belum terdaftar di outlet ini");
                         }
 
-                        if ($inventory->stok_saat_ini < $item['jumlah']) {
-                            throw new \Exception("Stok '{$product->nama}' tidak mencukupi. Tersedia: {$inventory->stok_saat_ini}, diminta: {$item['jumlah']}");
+                        if ($inventory) {
+                            $stokSebelum = $inventory->stok_saat_ini;
+                            $inventory->decrement('stok_saat_ini', $data['jumlah']);
+
+                            // Kirim notifikasi HANYA saat penjualan ini yang membuat stok baru saja
+                            // melintasi ambang minimum — supaya admin tidak dibanjiri notifikasi berulang
+                            // di setiap transaksi berikutnya selama stok masih di bawah ambang.
+                            if ($inventory->stok_minimum > 0 && $stokSebelum > $inventory->stok_minimum && $inventory->stok_saat_ini <= $inventory->stok_minimum) {
+                                $admins = User::where('outlet_id', $transaction->outlet_id)
+                                    ->whereHas('role', fn ($q) => $q->where('nama_peran', 'Admin'))
+                                    ->get();
+
+                                $outletNama = \App\Models\Outlet::find($transaction->outlet_id)?->nama ?? 'outlet ini';
+                                Notification::send($admins, new LowStockNotification($product->nama, $inventory->stok_saat_ini, $outletNama));
+                            }
                         }
                     }
 

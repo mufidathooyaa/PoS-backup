@@ -57,8 +57,8 @@ export function AppShell() {
     
     if (notif.tipe === "shift_selisih") {
       navigate("/shift"); 
-    } else if (notif.tipe === "stok_approval") {
-      navigate("/inventory"); 
+    } else if (notif.tipe === "stok_approval" || notif.tipe === "stok_menipis") {
+      navigate("/inventaris"); 
     }
   };
 

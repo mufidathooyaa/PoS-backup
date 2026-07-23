@@ -14,12 +14,12 @@ class StockApprovalNotification extends Notification
     protected $jenisPenyesuaian;
     protected $referenceId;
 
-    public function __construct($namaPengaju, $namaProduk, $jenisPenyesuaian)
+    public function __construct($namaPengaju, $namaProduk, $jenisPenyesuaian, $referenceId)
     {
-        $this->namaPengaju = $namaPengaju;
-        $this->namaProduk = $namaProduk;
-        $this->jenisPenyesuaian = $jenisPenyesuaian; // misal: "Stock Opname" atau "Barang Rusak"
-        $this->referenceId = $referenceId;
+    $this->namaPengaju = $namaPengaju;
+    $this->namaProduk = $namaProduk;
+    $this->jenisPenyesuaian = $jenisPenyesuaian;
+    $this->referenceId = $referenceId;
     }
 
     public function via($notifiable)
