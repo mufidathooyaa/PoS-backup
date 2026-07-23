@@ -59,4 +59,9 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+
+    public function inventories()
+    {
+        return $this->hasMany(Inventory::class, 'product_id');
+    }
 }

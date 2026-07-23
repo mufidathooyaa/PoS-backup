@@ -326,8 +326,14 @@ class ProductController extends Controller
             ->where('is_active', true);
 
         if ($request->boolean('for_checkout')) {
-            $query->whereHas('inventories', function ($q) use ($outletId) {
-                $q->where('outlet_id', $outletId);
+            // Produk yang tidak dilacak stoknya (mis. jasa, biaya tambahan) selalu tampil.
+            // Produk yang dilacak stoknya hanya tampil kalau outlet ini punya baris inventory-nya —
+            // ini yang bikin katalog per-outlet bisa beda (outlet baru tidak otomatis jual semua produk).
+            $query->where(function ($q) use ($outletId) {
+                $q->where('track_stock', false)
+                    ->orWhereHas('inventories', function ($sub) use ($outletId) {
+                        $sub->where('outlet_id', $outletId);
+                    });
             });
         }
 
