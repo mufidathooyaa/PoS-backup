@@ -13,6 +13,8 @@ use App\Models\Product;
 use App\Models\TaxRule;
 use App\Models\DiscountRule;
 use App\Models\Shift;
+use App\Models\User;
+use App\Notifications\LowStockNotification;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

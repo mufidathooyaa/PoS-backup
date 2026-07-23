@@ -320,15 +320,20 @@ class ProductController extends Controller
     // Endpoint katalog untuk kasir — hanya produk aktif + stok di outlet kasir sendiri
     public function catalog(Request $request)
     {
-        $user = $request->user();
+        $outletId = \App\Services\OutletContext::resolve($request);
 
         $query = Product::with('category')
             ->where('is_active', true);
 
+        if ($request->boolean('for_checkout')) {
+            $query->whereHas('inventories', function ($q) use ($outletId) {
+                $q->where('outlet_id', $outletId);
+            });
+        }
+
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
-
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -340,8 +345,8 @@ class ProductController extends Controller
 
         $products = $query->orderBy('nama')->get();
 
-        // Gabungkan info stok per outlet kasir yang sedang login
-        $inventories = Inventory::where('outlet_id', $user->outlet_id)
+        // Gabungkan info stok sesuai outlet yang di-resolve (bisa outlet lain kalau Admin sedang switch)
+        $inventories = Inventory::where('outlet_id', $outletId)
             ->whereIn('product_id', $products->pluck('id'))
             ->get()
             ->keyBy('product_id');

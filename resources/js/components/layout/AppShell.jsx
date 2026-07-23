@@ -10,30 +10,64 @@ import { PasswordInput } from "../ui/PasswordInput";
 
 export function AppShell() {
   const { user, logout, activeOutlet, setActiveOutlet } = useAuth();
+  
+  // 1. PINDAHKAN INI KE PALING ATAS
+  const isAdmin = user.role === "Admin";
+  const navigate = useNavigate();
+  const toast = useToast();
+  
+  // 2. KUMPULKAN SEMUA STATE DI SINI
   const [outletSwitcherOpen, setOutletSwitcherOpen] = useState(false);
   const [outlets, setOutlets] = useState([]);
-  const isAdmin = user.role === "Admin";
-  const toast = useToast();
+  const [notifications, setNotifications] = useState([]);
+  const [collapsed, setCollapsed] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [online, setOnline] = useState(() => localStorage.getItem("pos_offline") !== "1");
 
+  const currentOutletName = activeOutlet?.nama ?? user.outlet_nama;
+
+  // Fungsi Fetch Notifikasi
+  const fetchNotifications = async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await api.get("/notifications");
+      setNotifications(res.notifications || []);
+    } catch (err) {
+      // Abaikan error diam-diam
+    }
+  };
+
+  // Efek untuk memuat outlet dan notifikasi
   useEffect(() => {
     if (!isAdmin) return;
     api.get("/outlets").then((res) => setOutlets(res.outlets)).catch(() => {});
   }, [isAdmin]);
 
-  const currentOutletName = activeOutlet?.nama ?? user.outlet_nama;
+  useEffect(() => {
+    fetchNotifications();
+  }, [activeOutlet, isAdmin]);
 
-  const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [online, setOnline] = useState(() => localStorage.getItem("pos_offline") !== "1");
+  // Fungsi saat notifikasi diklik
+  const handleNotifClick = (notif) => {
+    setNotifOpen(false); // Tutup dropdown
+    // Kita hapus kode api.post('/notifications/read') dan setNotifications di sini
+    
+    if (notif.tipe === "shift_selisih") {
+      navigate("/shift"); 
+    } else if (notif.tipe === "stok_approval") {
+      navigate("/inventory"); 
+    }
+  };
+
   const toggleOnline = () => {
     const next = !online; setOnline(next);
     localStorage.setItem("pos_offline", next ? "0" : "1");
     window.dispatchEvent(new Event("pos-connectivity"));
   };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <aside className={`${collapsed ? "w-[72px]" : "w-[224px]"} flex shrink-0 flex-col bg-navy text-white transition-all`}>
@@ -94,12 +128,53 @@ export function AppShell() {
           )}
           
           <div className="relative">
-            <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }} aria-label="Notifikasi"><Bell size={19} /><span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-red-500 text-[9px] font-bold text-white">3</span></button>
-            {notifOpen && <div className="absolute right-0 top-12 z-40 w-80 rounded-lg border bg-white p-2 shadow-xl">
-              <div className="px-2 py-2 text-xs font-bold">Notifikasi terbaru</div>
-              {["3 approval menunggu keputusan", "Stok Croissant Butter menipis", "1 transaksi menunggu sinkronisasi"].map((n, i) => <div key={n} className="flex gap-3 rounded-lg p-2 hover:bg-slate-50"><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${i === 0 ? "bg-orange" : "bg-blue-500"}`} /><span className="text-xs text-slate-600">{n}</span></div>)}
-            </div>}
+            <button 
+              className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" 
+              onClick={() => { 
+                setNotifOpen(!notifOpen); 
+                setProfileOpen(false);
+                if (!notifOpen) fetchNotifications(); // Tarik data terbaru tiap lonceng dibuka
+              }} 
+              aria-label="Notifikasi"
+            >
+              <Bell size={19} />
+              {notifications.length > 0 && (
+                <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+            
+            {notifOpen && (
+              <div className="absolute right-0 top-12 z-40 w-80 max-h-96 overflow-y-auto rounded-lg border bg-white p-2 shadow-xl">
+                <div className="px-2 py-2 text-xs font-bold flex justify-between items-center">
+                  <span>Notifikasi terbaru</span>
+                </div>
+                
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-500">Tidak ada notifikasi baru</div>
+                ) : (
+                  <div className="space-y-1">
+                    {notifications.map((n) => (
+                      <button 
+                        key={n.id} 
+                        onClick={() => handleNotifClick(n)}
+                        className="flex w-full items-start gap-3 rounded-lg p-2 text-left hover:bg-slate-50"
+                      >
+                        <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.tipe === "shift_selisih" ? "bg-orange" : "bg-blue-500"}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-slate-700 truncate">{n.judul}</div>
+                          <div className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">{n.pesan}</div>
+                          <div className="mt-1 text-[9px] font-medium text-slate-400">{n.created_at}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
           <div className="relative">
             <button className="flex items-center gap-2" onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }} aria-label="Menu profil"><span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-xs font-bold text-white">{user.name.slice(0, 1)}</span><ChevronDown size={14} className="text-slate-400" /></button>
             {profileOpen && <div className="absolute right-0 top-12 z-40 w-64 rounded-lg border bg-white p-3 shadow-xl">
@@ -117,7 +192,7 @@ export function AppShell() {
           className="space-y-4"
           onSubmit={async (e) => {
             e.preventDefault();
-            const formEl = e.currentTarget; // simpan referensi SEBELUM await — e.currentTarget jadi null setelah event selesai di-dispatch
+            const formEl = e.currentTarget;
             const fd = new FormData(formEl);
             const password_lama = fd.get("password_lama");
             const password_baru = fd.get("password_baru");

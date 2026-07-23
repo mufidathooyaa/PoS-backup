@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\User;
+use App\Notifications\ShiftDiscrepancyNotification;
 use App\Http\Controllers\Controller;
 use App\Models\Shift;
 use App\Models\Transaction;
@@ -9,6 +11,7 @@ use App\Models\Payment;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Notification;
 
 class ShiftController extends Controller
 {
@@ -115,6 +118,15 @@ class ShiftController extends Controller
             ['status' => 'CLOSED', 'selisih' => $selisih]
         );
 
+        if ($selisih != 0) {
+            $admins = User::where('outlet_id', $shift->outlet_id)
+                ->whereHas('role', function ($q) {
+                    $q->where('nama_peran', 'Admin');
+                })->get();
+
+            Notification::send($admins, new ShiftDiscrepancyNotification($user->nama, $selisih, $shift->id));
+        }
+
         return response()->json([
             'message' => 'Shift berhasil ditutup',
             'shift' => $shift,
@@ -198,6 +210,11 @@ class ShiftController extends Controller
         ]);
 
         AuditLogger::log($request, 'review_shift_variance', 'shifts', $shift->id, 'success', null, ['selisih' => $shift->selisih, 'catatan_admin' => $request->catatan_admin]);
+
+        \Illuminate\Support\Facades\DB::table('notifications')
+            ->where('data->tipe', 'shift_selisih')
+            ->where('data->shift_id', $shift->id)
+            ->update(['read_at' => now()]);
 
         return response()->json(['message' => 'Shift berhasil ditinjau', 'shift' => $shift->fresh('user')]);
     }

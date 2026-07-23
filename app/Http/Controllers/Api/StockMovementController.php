@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\User;
+use App\Notifications\StockApprovalNotification;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Inventory;
@@ -10,7 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Notification;
 use App\Services\AuditLogger;
+
 
 class StockMovementController extends Controller
 {
@@ -152,6 +156,16 @@ class StockMovementController extends Controller
             ['selisih' => $selisih, 'alasan' => $request->alasan, 'status' => $movement->status]
         );
 
+        if (! $isAdmin) {
+            $admins = User::where('outlet_id', $user->outlet_id)
+                ->whereHas('role', function ($q) {
+                    $q->where('nama_peran', 'Admin');
+                })->get();
+
+            // Menggunakan $user->name dan $product->nama
+            Notification::send($admins, new StockApprovalNotification($user->name, $product->nama, 'Penyesuaian Manual', $movement->id));
+        }
+
         return response()->json([
             'message' => $isAdmin ? 'Penyesuaian stok berhasil disimpan' : 'Pengajuan penyesuaian dikirim, menunggu persetujuan Admin',
             'movement' => $movement,
@@ -200,6 +214,25 @@ class StockMovementController extends Controller
 
         AuditLogger::log($request, 'approve_stock_adjustment', 'stock_movements', $movement->id, 'success', ['status' => 'pending'], ['status' => 'applied']);
 
+        \Illuminate\Support\Facades\DB::table('notifications')
+            ->where('data->tipe', 'stok_approval')
+            ->where('data->reference_id', $movement->id)
+            ->update(['read_at' => now()]);
+
+        // Khusus untuk Stock Opname massal: Hapus lonceng HANYA jika semua item sudah disetujui
+        if ($movement->source_type === 'stock_opname' && $movement->source_id) {
+            $pendingCount = \App\Models\StockMovement::where('source_id', $movement->source_id)
+                ->where('status', 'pending')
+                ->count();
+                
+            if ($pendingCount === 0) {
+                \Illuminate\Support\Facades\DB::table('notifications')
+                    ->where('data->tipe', 'stok_approval')
+                    ->where('data->reference_id', $movement->source_id)
+                    ->update(['read_at' => now()]);
+            }
+        }
+
         return response()->json(['message' => 'Penyesuaian stok disetujui dan diterapkan']);
     }
 
@@ -221,6 +254,25 @@ class StockMovementController extends Controller
         ]);
 
         AuditLogger::log($request, 'reject_stock_adjustment', 'stock_movements', $movement->id, 'success', ['status' => 'pending'], ['status' => 'rejected']);
+
+        \Illuminate\Support\Facades\DB::table('notifications')
+            ->where('data->tipe', 'stok_approval')
+            ->where('data->reference_id', $movement->id)
+            ->update(['read_at' => now()]);
+
+        // Khusus untuk Stock Opname massal: Hapus lonceng HANYA jika semua item sudah disetujui
+        if ($movement->source_type === 'stock_opname' && $movement->source_id) {
+            $pendingCount = \App\Models\StockMovement::where('source_id', $movement->source_id)
+                ->where('status', 'pending')
+                ->count();
+                
+            if ($pendingCount === 0) {
+                \Illuminate\Support\Facades\DB::table('notifications')
+                    ->where('data->tipe', 'stok_approval')
+                    ->where('data->reference_id', $movement->source_id)
+                    ->update(['read_at' => now()]);
+            }
+        }
 
         return response()->json(['message' => 'Pengajuan penyesuaian ditolak']);
     }
@@ -298,6 +350,15 @@ class StockMovementController extends Controller
             null,
             ['catatan_sesi' => $request->catatan_sesi, 'jumlah_disesuaikan' => count($hasilPenyesuaian), 'jumlah_sesuai' => $jumlahSesuai, 'status' => $isAdmin ? 'applied' : 'pending']
         );
+
+        if (! $isAdmin && count($hasilPenyesuaian) > 0) {
+            $admins = User::where('outlet_id', $user->outlet_id)
+                ->whereHas('role', function ($q) {
+                    $q->where('nama_peran', 'Admin');
+                })->get();
+
+            Notification::send($admins, new StockApprovalNotification($user->name, count($hasilPenyesuaian) . ' Item Produk', 'Stock Opname', $sessionId));
+        }
 
         return response()->json([
             'message' => $isAdmin

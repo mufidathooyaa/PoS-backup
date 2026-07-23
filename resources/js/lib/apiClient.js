@@ -6,10 +6,22 @@ function getToken() {
   return localStorage.getItem("pos_token");
 }
 
-async function request(path, { method = "GET", body, params } = {}) {
+async function request(path, { method = "GET", body, params = {} } = {}) {
   let url = `${BASE_URL}${path}`;
 
-  if (params) {
+  try {
+    const storedOutlet = localStorage.getItem("pos_active_outlet");
+    if (storedOutlet) {
+      const parsedOutlet = JSON.parse(storedOutlet);
+      if (parsedOutlet && parsedOutlet.id) {
+        params.outlet_id = parsedOutlet.id;
+      }
+    }
+  } catch (error) {
+    // Abaikan secara diam-diam jika JSON tidak valid
+  }
+
+  if (Object.keys(params).length > 0) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
     ).toString();

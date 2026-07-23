@@ -28,6 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/me/change-password', [AuthController::class, 'changePassword']);
     Route::post('/price-overrides/authorize', [AuthController::class, 'authorizePriceOverride'])->middleware('throttle:6,1');
 
+    Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+    
     // ==========================================
     // Katalog (semua role yang login)
     // ==========================================

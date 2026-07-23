@@ -56,7 +56,7 @@ export function CashierPage() {
     setLoadingPage(true);
     try {
       const [catalogRes, paymentRes, taxRes, discountRes, heldRes] = await Promise.all([
-        api.get("/catalog"),
+        api.get("/catalog", { params: { for_checkout: true } }),
         api.get("/payment-methods"),
         api.get("/tax-rules/active"),
         api.get("/discount-rules/active"), // <-- baris baru
