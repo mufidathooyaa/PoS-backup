@@ -162,10 +162,18 @@ class ShiftController extends Controller
 
     public function current(Request $request)
     {
-        $shift = Shift::with('user.role', 'approvedBy') 
-            ->where('user_id', $request->user()->id)
-            ->where('status', 'OPEN')
-            ->first();
+        $user = $request->user();
+        $query = Shift::with('user.role', 'approvedBy')
+            ->where('status', 'OPEN');
+
+        // Jika Admin, cari shift siapapun yang terbuka di outlet ini.
+        // Jika bukan, cari HANYA shift milik user itu sendiri.
+        if ($user->role && $user->role->nama_peran === 'Admin') {
+            $query->where('outlet_id', \App\Services\OutletContext::resolve($request));
+        } else {
+            $query->where('user_id', $user->id);
+        }
+        $shift = $query->orderBy('waktu_buka')->first();
 
         if (! $shift) {
             return response()->json(['message' => 'Tidak ada shift yang terbuka saat ini'], 404);

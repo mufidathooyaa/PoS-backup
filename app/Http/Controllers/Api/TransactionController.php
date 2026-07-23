@@ -19,6 +19,7 @@ use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Notification;
 
 class TransactionController extends Controller
 {
@@ -88,17 +89,14 @@ class TransactionController extends Controller
 
                         if ($inventory) {
                             $stokSebelum = $inventory->stok_saat_ini;
-                            $inventory->decrement('stok_saat_ini', $data['jumlah']);
+                            $inventory->decrement('stok_saat_ini', $item['jumlah']);
 
-                            // Kirim notifikasi HANYA saat penjualan ini yang membuat stok baru saja
-                            // melintasi ambang minimum — supaya admin tidak dibanjiri notifikasi berulang
-                            // di setiap transaksi berikutnya selama stok masih di bawah ambang.
                             if ($inventory->stok_minimum > 0 && $stokSebelum > $inventory->stok_minimum && $inventory->stok_saat_ini <= $inventory->stok_minimum) {
-                                $admins = User::where('outlet_id', $transaction->outlet_id)
+                                $admins = User::where('outlet_id', $user->outlet_id)
                                     ->whereHas('role', fn ($q) => $q->where('nama_peran', 'Admin'))
                                     ->get();
 
-                                $outletNama = \App\Models\Outlet::find($transaction->outlet_id)?->nama ?? 'outlet ini';
+                                $outletNama = \App\Models\Outlet::find($user->outlet_id)?->nama ?? 'outlet ini';
                                 Notification::send($admins, new LowStockNotification($product->nama, $inventory->stok_saat_ini, $outletNama));
                             }
                         }
