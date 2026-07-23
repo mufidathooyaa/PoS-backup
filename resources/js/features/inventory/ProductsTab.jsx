@@ -181,6 +181,7 @@ export function ProductsTab() {
                                     <button
                                         className="mr-2 rounded-md border p-2"
                                         onClick={() => setModal(p)}
+                                        aria-label={`Edit produk ${p.nama}`}
                                     >
                                         <Pencil size={14} />
                                     </button>
@@ -188,6 +189,7 @@ export function ProductsTab() {
                                         <button
                                             className="rounded-md border p-2 text-red-500"
                                             onClick={() => archive(p)}
+                                            aria-label={`Arsipkan produk ${p.nama}`}
                                         >
                                             <Archive size={14} />
                                         </button>
@@ -195,6 +197,7 @@ export function ProductsTab() {
                                         <button
                                             className="rounded-md border p-2 text-emerald-600"
                                             onClick={() => reactivate(p)}
+                                            aria-label={`Aktifkan kembali produk ${p.nama}`}
                                         >
                                             <CheckCircle2 size={14} />
                                         </button>
