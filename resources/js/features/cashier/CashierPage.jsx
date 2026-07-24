@@ -79,11 +79,7 @@ export function CashierPage() {
       const shiftRes = await api.get("/shifts/current");
       setShift(shiftRes.shift);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404) {
-        setShift(null);
-      } else {
-        toast(err.message || "Gagal memuat status shift", "danger");
-      }
+      toast(err.message || "Gagal memuat status shift", "danger");
     }
     setLoadingPage(false);
   }, [toast]);

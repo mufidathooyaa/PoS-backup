@@ -164,7 +164,7 @@ class ShiftController extends Controller
         $shift = $query->orderBy('waktu_buka')->first();
 
         if (! $shift) {
-            return response()->json(['message' => 'Tidak ada shift yang terbuka saat ini'], 404);
+            return response()->json(['shift' => null]);
         }
 
         return response()->json(['shift' => $this->withLiveStats($shift)]);

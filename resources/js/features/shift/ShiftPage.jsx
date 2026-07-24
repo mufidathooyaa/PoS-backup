@@ -50,15 +50,12 @@ export function ShiftPage() {
         }
 
         try {
-            const curRes = await api.get("/shifts/current");
-            setCurrentShift(curRes.shift);
+          const curRes = await api.get("/shifts/current");
+        setCurrentShift(curRes.shift); // null kalau memang tidak ada shift terbuka
         } catch (err) {
-            if (err instanceof ApiError && err.status === 404) {
-                setCurrentShift(null); // wajar: memang belum ada shift terbuka
-            } else {
-                toast(err.message || "Gagal memuat status shift", "error");
-            }
+        toast(err.message || "Gagal memuat status shift", "danger");
         }
+        
         setLoading(false);
     }, [toast, user, activeOutlet]);
 
