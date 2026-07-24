@@ -69,8 +69,8 @@ class TransactionController extends Controller
                 foreach ($request->items as $item) {
                     $product = Product::lockForUpdate()->find($item['product_id']);
 
-                    if (! $product->is_active) {
-                        throw new \Exception("Produk '{$product->nama}' tidak aktif dan tidak bisa dijual");
+                    if (! $product || ! $product->is_active) {
+                        throw new \Exception("Produk dengan ID {$item['product_id']} tidak ditemukan atau tidak aktif.");
                     }
 
                     // Validasi stok cukup — hanya untuk produk yang memang dilacak stoknya
@@ -84,8 +84,8 @@ class TransactionController extends Controller
                             throw new \Exception("Stok untuk produk '{$product->nama}' belum terdaftar di outlet ini");
                         }
 
-                        if ($inventory) {
-                            $inventory->decrement('stok_saat_ini', $item['jumlah']);
+                        if ($inventory->stok_saat_ini < $item['jumlah']) {
+                            throw new \Exception("Stok untuk produk '{$product->nama}' tidak mencukupi. Tersedia: {$inventory->stok_saat_ini}, Dibutuhkan: {$item['jumlah']}");
                         }
                     }
 
@@ -440,12 +440,14 @@ class TransactionController extends Controller
         $completed = (clone $baseQuery)->where('status', 'completed');
         $refunded = (clone $baseQuery)->where('status', 'refunded');
 
+        $totalTransaksiKotor = (float) (clone $completed)->sum('grand_total');
+        $totalRefund = (float) (clone $refunded)->sum('grand_total');
+
         return response()->json([
             'total_transaksi' => (clone $completed)->count(),
-            'nilai_transaksi' => (float) (clone $completed)->sum('grand_total'),
+            'nilai_transaksi' => $totalTransaksiKotor - $totalRefund, // <-- sekarang net setelah refund
             'jumlah_refund' => (clone $refunded)->count(),
-            'total_refund' => (float) (clone $refunded)->sum('grand_total'),
+            'total_refund' => $totalRefund,
         ]);
     }
-
 }

@@ -7,6 +7,7 @@ use App\Models\Shift;
 use App\Models\Transaction;
 use App\Models\Payment;
 use App\Services\AuditLogger;
+use App\Services\OutletContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -16,43 +17,46 @@ class ShiftController extends Controller
     {
         $user = $request->user();
 
-        $validator = Validator::make($request->all(), [
-            'kas_awal' => 'required|numeric|min:0',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
+        if ($user->role && $user->role->nama_peran === 'Admin') {
+            return response()->json([
+                'message' => 'Admin tidak perlu membuka shift; silakan tinjau penutupan kasir.',
+            ], 403);
         }
 
-        // Cegah satu kasir punya dua shift OPEN sekaligus
+        $outletId = OutletContext::resolve($request);
+
         $existingOpenShift = Shift::where('user_id', $user->id)
             ->where('status', 'OPEN')
+            ->where('outlet_id', $outletId)
             ->first();
 
         if ($existingOpenShift) {
             return response()->json([
-                'message' => 'Anda masih memiliki shift yang terbuka. Tutup shift tersebut terlebih dahulu.',
+                'message' => 'Anda masih memiliki shift yang terbuka di outlet ini.',
                 'shift_id' => $existingOpenShift->id,
             ], 409);
         }
 
         $shift = Shift::create([
             'user_id' => $user->id,
-            'outlet_id' => $user->outlet_id, // otomatis dari outlet user login
+            'outlet_id' => $outletId,
             'waktu_buka' => now(),
             'kas_awal' => $request->kas_awal,
             'status' => 'OPEN',
         ]);
 
-        return response()->json([
-            'message' => 'Shift berhasil dibuka',
-            'shift' => $shift,
-        ], 201);
+        return response()->json(['message' => 'Shift berhasil dibuka', 'shift' => $shift], 201);
     }
 
     public function close(Request $request, string $id)
     {
         $user = $request->user();
+
+        if ($user->role && $user->role->nama_peran === 'Admin') {
+            return response()->json([
+                'message' => 'Admin tidak perlu menutup shift; silakan tinjau penutupan kasir.',
+            ], 403);
+        }
 
         $validator = Validator::make($request->all(), [
             'kas_dihitung' => 'required|numeric|min:0',
@@ -74,7 +78,12 @@ class ShiftController extends Controller
         }
 
         // Hanya kasir pemilik shift yang boleh menutup shift-nya sendiri
-        if ($shift->user_id !== $user->id) {
+        $isAdmin = $user->role && $user->role->nama_peran === 'Admin';
+        $selectedOutletId = $isAdmin ? OutletContext::resolve($request) : $user->outlet_id;
+
+        $canCloseShift = $shift->user_id === $user->id || ($isAdmin && $shift->outlet_id === $selectedOutletId);
+
+        if (! $canCloseShift) {
             return response()->json(['message' => 'Anda tidak berwenang menutup shift ini'], 403);
         }
 
@@ -130,7 +139,8 @@ class ShiftController extends Controller
 
         // Admin bisa lihat semua kasir di outletnya; selain admin hanya lihat shift miliknya sendiri
         if ($user->role && $user->role->nama_peran === 'Admin') {
-            $query->where('outlet_id', \App\Services\OutletContext::resolve($request));
+            $query->where('outlet_id', \App\Services\OutletContext::resolve($request))
+                ->whereHas('user.role', fn ($q) => $q->where('nama_peran', 'Kasir'));
         } else {
             $query->where('user_id', $user->id);
         }
@@ -173,9 +183,10 @@ class ShiftController extends Controller
     public function pendingReview(Request $request)
     {
         $user = $request->user();
+        $selectedOutletId = OutletContext::resolve($request);
 
         $shifts = Shift::with('user')
-            ->where('outlet_id', $user->outlet_id)
+            ->where('outlet_id', $selectedOutletId)
             ->where('status', 'CLOSED')
             ->where('selisih', '!=', 0)
             ->whereNull('approved_by_user_id')

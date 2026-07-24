@@ -28,8 +28,20 @@ export function AppShell() {
   const currentOutletName = activeOutlet?.nama ?? user.outlet_nama;
 
   useEffect(() => {
-    if (!isAdmin) return;
-    api.get("/outlets").then((res) => setOutlets(res.outlets)).catch(() => {});
+    const loadOutlets = () => {
+      if (!isAdmin) {
+        setOutlets([]);
+        return;
+      }
+
+      api.get("/outlets")
+        .then((res) => setOutlets(res.outlets))
+        .catch(() => setOutlets([]));
+    };
+
+    loadOutlets();
+    window.addEventListener("pos-outlets-updated", loadOutlets);
+    return () => window.removeEventListener("pos-outlets-updated", loadOutlets);
   }, [isAdmin]);
 
   const toggleOnline = () => {
@@ -61,50 +73,146 @@ export function AppShell() {
       </aside>
 
       <section className="min-w-0 flex-1">
-        <header className="flex h-16 items-center gap-4 border-b bg-white px-5">
-          <button className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setCollapsed(!collapsed)}><Menu size={20} /></button>
-          <div className="relative max-w-xl flex-1"><Search size={16} className="absolute left-3 top-2.5 text-slate-400" /><input className="input pl-9" placeholder="Cari menu, transaksi, produk, atau laporan..." aria-label="Cari menu, transaksi, produk, atau laporan" /></div>
-          <button onClick={toggleOnline} className={`hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold sm:flex ${online ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-            {online ? <Wifi size={15} /> : <WifiOff size={15} />} {online ? "Mode Online" : "Mode Offline"}
-          </button>
+        <header className="flex h-16 items-center border-b bg-white px-5">
 
-          {isAdmin ? (
-            <div className="relative hidden md:block">
+          {/* ================= LEFT ================= */}
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+
+            <button
+              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              <Menu size={20} />
+            </button>
+
+          </div>
+
+          {/* ================= RIGHT ================= */}
+          <div className="ml-4 flex shrink-0 items-center gap-3">
+
+            <button
+              onClick={toggleOnline}
+              className={`hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold lg:flex ${
+                online
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              {online ? <Wifi size={15} /> : <WifiOff size={15} />}
+              {online ? "Mode Online" : "Mode Offline"}
+            </button>
+
+            {isAdmin ? (
+              <div className="relative">
+                <button
+                  className="flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  onClick={() => {
+                    setOutletSwitcherOpen(!outletSwitcherOpen);
+                    setProfileOpen(false);
+                  }}
+                >
+                  <Store size={14} className="text-slate-400" />
+                  <span className="hidden lg:inline">
+                    {currentOutletName}
+                  </span>
+                  <ChevronDown size={14} />
+                </button>
+
+                {outletSwitcherOpen && (
+                  <div className="absolute right-0 top-12 z-40 w-56 rounded-lg border bg-white p-2 shadow-xl">
+                    <div className="px-2 py-1.5 text-[11px] font-bold uppercase text-slate-400">
+                      Lihat data outlet
+                    </div>
+
+                    {outlets.map((o) => (
+                      <button
+                        key={o.id}
+                        className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium hover:bg-slate-50 ${
+                          o.id === (activeOutlet?.id ?? user.outlet_id)
+                            ? "text-orange"
+                            : "text-slate-600"
+                        }`}
+                        onClick={() => {
+                          setActiveOutlet({
+                            id: o.id,
+                            nama: o.nama,
+                          });
+
+                          setOutletSwitcherOpen(false);
+                        }}
+                      >
+                        <Store size={13} />
+                        {o.nama}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="hidden h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-500 lg:flex">
+                <Store size={14} className="text-slate-400" />
+                {currentOutletName}
+              </div>
+            )}
+
+            <div className="relative">
+
               <button
-                className="flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                onClick={() => { setOutletSwitcherOpen(!outletSwitcherOpen); setProfileOpen(false); }}
+                className="flex items-center gap-2"
+                onClick={() => setProfileOpen(!profileOpen)}
               >
-                <Store size={14} className="text-slate-400" /> {currentOutletName} <ChevronDown size={14} />
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-xs font-bold text-white">
+                  {user.name.slice(0, 1)}
+                </span>
+
+                <ChevronDown
+                  size={14}
+                  className="text-slate-400"
+                />
               </button>
-              {outletSwitcherOpen && (
-                <div className="absolute right-0 top-12 z-40 w-56 rounded-lg border bg-white p-2 shadow-xl">
-                  <div className="px-2 py-1.5 text-[11px] font-bold uppercase text-slate-400">Lihat data outlet</div>
-                  {outlets.map((o) => (
-                    <button
-                      key={o.id}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium hover:bg-slate-50 ${o.id === (activeOutlet?.id ?? user.outlet_id) ? "text-orange" : "text-slate-600"}`}
-                      onClick={() => { setActiveOutlet({ id: o.id, nama: o.nama }); setOutletSwitcherOpen(false); }}
-                    >
-                      <Store size={13} /> {o.nama}
-                    </button>
-                  ))}
+
+              {profileOpen && (
+                <div className="absolute right-0 top-12 z-40 w-64 rounded-lg border bg-white p-3 shadow-xl">
+
+                  <div className="border-b pb-3">
+                    <div className="text-sm font-bold">
+                      {user.role}
+                    </div>
+
+                    <div className="mt-1 text-xs text-slate-500">
+                      {user.email}
+                    </div>
+                  </div>
+
+                  <button
+                    className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                    onClick={() => {
+                      setChangePasswordOpen(true);
+                      setProfileOpen(false);
+                    }}
+                  >
+                    <KeyRound size={15} />
+                    Ganti Password
+                  </button>
+
+                  <button
+                    className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+                    onClick={() => {
+                      logout();
+                      navigate("/login");
+                    }}
+                  >
+                    <LogOut size={15} />
+                    Logout
+                  </button>
+
                 </div>
               )}
+
             </div>
-          ) : (
-            <div className="hidden h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-500 md:flex">
-              <Store size={14} className="text-slate-400" /> {currentOutletName}
-            </div>
-          )}
-          
-          <div className="relative">
-            <button className="flex items-center gap-2" onClick={() => setProfileOpen(!profileOpen)} aria-label="Menu profil"><span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-xs font-bold text-white">{user.name.slice(0, 1)}</span><ChevronDown size={14} className="text-slate-400" /></button>
-            {profileOpen && <div className="absolute right-0 top-12 z-40 w-64 rounded-lg border bg-white p-3 shadow-xl">
-              <div className="border-b pb-3"><div className="text-sm font-bold">{user.role}</div><div className="mt-1 text-xs text-slate-500">{user.email}</div></div>
-              <button className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50" onClick={() => { setChangePasswordOpen(true); setProfileOpen(false); }}><KeyRound size={15} /> Ganti Password</button>
-              <button className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-red-600 hover:bg-red-50" onClick={() => { logout(); navigate("/login"); }}><LogOut size={15} /> Logout</button>
-            </div>}
+
           </div>
+
         </header>
         <main className="h-[calc(100vh-64px)] overflow-auto bg-canvas p-5"><Outlet context={{ online }} /></main>
       </section>

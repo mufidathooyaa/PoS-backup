@@ -88,11 +88,11 @@ export function TransactionsPage() {
       .map(([transaction_item_id, jumlah]) => ({ transaction_item_id, jumlah: Number(jumlah) }));
 
     if (!items.length) return toast("Pilih minimal satu item untuk direfund", "danger");
-    if (!refundReason.trim()) return toast("Alasan refund wajib diisi", "danger");
+    if (!isAdmin && !refundReason.trim()) return toast("Alasan refund wajib diisi", "danger");
 
     setRefundSubmitting(true);
     try {
-      await api.post(`/transactions/${selected.id}/refund`, { refund_reason: refundReason, items });
+      await api.post(`/transactions/${selected.id}/refund`, { refund_reason: refundReason || null, items });
       toast("Refund berhasil diproses");
       setRefundOpen(false);
       closeDetail();
@@ -128,7 +128,7 @@ export function TransactionsPage() {
 
       <div className="grid grid-cols-4 gap-3">
         <Kpi icon={ReceiptText} label="Total Transaksi" value={summary.total_transaksi} note="Hari ini" tone="blue" />
-        <Kpi icon={CircleDollarSign} label="Nilai Transaksi" value={formatIDR(summary.nilai_transaksi)} note="Sebelum refund" tone="orange" />
+        <Kpi icon={CircleDollarSign} label="Nilai Transaksi" value={formatIDR(summary.nilai_transaksi)} note="Setelah refund" tone="orange" />
         <Kpi icon={XCircle} label="Refund" value={summary.jumlah_refund} note={formatIDR(summary.total_refund)} tone="emerald" />
         <Kpi icon={ReceiptText} label="Rata-rata Transaksi" value={summary.total_transaksi ? formatIDR(summary.nilai_transaksi / summary.total_transaksi) : formatIDR(0)} note="Per transaksi" tone="blue" />
       </div>

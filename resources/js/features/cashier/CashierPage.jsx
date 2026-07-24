@@ -15,7 +15,7 @@ import { downloadReceiptPdf } from "../../lib/receiptPdf";
 import { PasswordInput } from "../../components/ui/PasswordInput";
 
 export function CashierPage() {
-  const { user } = useAuth();
+  const { user, activeOutlet } = useAuth();
   const toast = useToast();
 
   const [shift, setShift] = useState(null);
@@ -76,7 +76,9 @@ export function CashierPage() {
     }
 
     try {
-      const shiftRes = await api.get("/shifts/current");
+      const shiftRes = await api.get("/shifts/current", {
+          outlet_id: activeOutlet?.id ?? user?.outlet_id,
+      });
       setShift(shiftRes.shift);
     } catch (err) {
       toast(err.message || "Gagal memuat status shift", "danger");

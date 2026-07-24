@@ -18,9 +18,10 @@ class TransactionActionController extends Controller
     public function void(Request $request, string $id)
     {
         $user = $request->user();
+        $isAdmin = $user->role && $user->role->nama_peran === 'Admin';
 
         $validator = Validator::make($request->all(), [
-            'void_reason' => 'required|string',
+            'void_reason' => $isAdmin ? 'nullable|string' : 'required|string',
         ]);
         if ($validator->fails()) {
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
@@ -95,9 +96,10 @@ class TransactionActionController extends Controller
     public function refund(Request $request, string $id)
     {
         $user = $request->user();
+        $isAdmin = $user->role && $user->role->nama_peran === 'Admin';
 
         $validator = Validator::make($request->all(), [
-            'refund_reason' => 'required|string',
+            'refund_reason' => $isAdmin ? 'nullable|string' : 'required|string',
             'items' => 'required|array|min:1',
             'items.*.transaction_item_id' => 'required|uuid|exists:transaction_items,id',
             'items.*.jumlah' => 'required|integer|min:1',
@@ -115,9 +117,6 @@ class TransactionActionController extends Controller
         }
 
         $shift = Shift::where('user_id', $user->id)->where('status', 'OPEN')->first();
-        if (! $shift) {
-            return response()->json(['message' => 'Anda harus membuka shift terlebih dahulu untuk memproses refund'], 422);
-        }
 
         try {
             $refundTransaction = DB::transaction(function () use ($request, $originalTransaction, $user, $shift) {
@@ -165,7 +164,7 @@ class TransactionActionController extends Controller
                     'nomor_transaksi' => $nomorTransaksi,
                     'original_transaction_id' => $originalTransaction->id,
                     'outlet_id' => $originalTransaction->outlet_id,
-                    'shift_id' => $shift->id,
+                    'shift_id' => $shift?->id,
                     'cashier_id' => $user->id,
                     'status' => 'refunded',
                     'subtotal' => $subtotal,

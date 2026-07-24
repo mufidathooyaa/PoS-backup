@@ -50,12 +50,14 @@ export function ShiftPage() {
         }
 
         try {
-          const curRes = await api.get("/shifts/current");
-        setCurrentShift(curRes.shift); // null kalau memang tidak ada shift terbuka
+            const curRes = await api.get("/shifts/current", {
+                outlet_id: activeOutlet?.id ?? user?.outlet_id,
+            });
+            setCurrentShift(curRes.shift); // null kalau memang tidak ada shift terbuka
         } catch (err) {
-        toast(err.message || "Gagal memuat status shift", "danger");
+            toast(err.message || "Gagal memuat status shift", "danger");
         }
-        
+
         setLoading(false);
     }, [toast, user, activeOutlet]);
 
@@ -70,6 +72,7 @@ export function ShiftPage() {
         try {
             await api.post("/shifts/open", {
                 kas_awal: Number(fd.get("cash")),
+                outlet_id: activeOutlet?.id ?? user?.outlet_id,
             });
             toast("Shift berhasil dibuka");
             setModal(null);
@@ -94,6 +97,7 @@ export function ShiftPage() {
             await api.post(`/shifts/${currentShift.id}/close`, {
                 kas_dihitung: Number(counted),
                 catatan_penutup: note || null,
+                outlet_id: activeOutlet?.id ?? user?.outlet_id,
             });
             toast("Shift ditutup dan dicatat di audit");
             setModal(null);
@@ -147,19 +151,21 @@ export function ShiftPage() {
                 title="Shift"
                 subtitle={
                     user.role === "Admin"
-                        ? "Pantau seluruh shift outlet"
+                        ? "Pantau penutupan shift kasir"
                         : "Kelola shift kasir Anda"
                 }
                 actions={
-                    <button
-                        className={open ? "btn-danger" : "btn-primary"}
-                        onClick={() => {
-                            setError("");
-                            setModal(open ? "close" : "open");
-                        }}
-                    >
-                        {open ? "Tutup Shift" : "Buka Shift"}
-                    </button>
+                    user.role === "Admin" ? null : (
+                        <button
+                            className={open ? "btn-danger" : "btn-primary"}
+                            onClick={() => {
+                                setError("");
+                                setModal(open ? "close" : "open");
+                            }}
+                        >
+                            {open ? "Tutup Shift" : "Buka Shift"}
+                        </button>
+                    )
                 }
             />
 
@@ -175,7 +181,9 @@ export function ShiftPage() {
                     note={
                         open
                             ? `Dibuka ${new Date(currentShift.waktu_buka).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
-                            : "Buka shift untuk mulai transaksi"
+                            : user.role === "Admin"
+                              ? "Admin hanya meninjau penutupan shift kasir"
+                              : "Buka shift untuk mulai transaksi"
                     }
                     tone={open ? "emerald" : "amber"}
                 />

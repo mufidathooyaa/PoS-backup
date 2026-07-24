@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignUuid('original_transaction_id')->nullable()->constrained('transactions')->onDelete('restrict');
 
             $table->foreignUuid('outlet_id')->constrained('outlets')->onDelete('restrict');
-            $table->foreignUuid('shift_id')->constrained('shifts')->onDelete('restrict');
+            $table->foreignUuid('shift_id')->nullable()->constrained('shifts')->onDelete('restrict');
             $table->foreignUuid('cashier_id')->constrained('users')->onDelete('restrict');
 
             $table->foreignId('tax_rule_id')->nullable()->constrained('tax_rules')->onDelete('restrict');

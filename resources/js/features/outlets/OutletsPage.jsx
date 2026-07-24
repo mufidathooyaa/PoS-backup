@@ -60,6 +60,8 @@ export function OutletsPage() {
       setModal(false);
       setEditing(null);
       await loadData();
+      window.dispatchEvent(new Event("pos-outlets-updated"));
+
     } catch (err) {
       toast(err.message || "Gagal menyimpan outlet", "danger");
     } finally {
@@ -72,6 +74,8 @@ export function OutletsPage() {
       await api.post(`/outlets/${o.id}/toggle-active`);
       toast(o.is_active ? "Outlet dinonaktifkan" : "Outlet diaktifkan");
       await loadData();
+      window.dispatchEvent(new Event("pos-outlets-updated"));
+
     } catch (err) {
       toast(err.message || "Gagal mengubah status outlet", "danger");
     }
