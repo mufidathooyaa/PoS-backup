@@ -13,13 +13,10 @@ use App\Models\Product;
 use App\Models\TaxRule;
 use App\Models\DiscountRule;
 use App\Models\Shift;
-use App\Models\User;
-use App\Notifications\LowStockNotification;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Notification;
 
 class TransactionController extends Controller
 {
@@ -88,17 +85,7 @@ class TransactionController extends Controller
                         }
 
                         if ($inventory) {
-                            $stokSebelum = $inventory->stok_saat_ini;
                             $inventory->decrement('stok_saat_ini', $item['jumlah']);
-
-                            if ($inventory->stok_minimum > 0 && $stokSebelum > $inventory->stok_minimum && $inventory->stok_saat_ini <= $inventory->stok_minimum) {
-                                $admins = User::where('outlet_id', $user->outlet_id)
-                                    ->whereHas('role', fn ($q) => $q->where('nama_peran', 'Admin'))
-                                    ->get();
-
-                                $outletNama = \App\Models\Outlet::find($user->outlet_id)?->nama ?? 'outlet ini';
-                                Notification::send($admins, new LowStockNotification($product->nama, $inventory->stok_saat_ini, $outletNama));
-                            }
                         }
                     }
 

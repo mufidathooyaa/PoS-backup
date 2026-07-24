@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, KeyRound, LogOut, Menu, Search, Store, Wifi, WifiOff } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, Menu, Search, Store, Wifi, WifiOff } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import { menuByRole } from "../../config/menu";
@@ -19,48 +19,18 @@ export function AppShell() {
   // 2. KUMPULKAN SEMUA STATE DI SINI
   const [outletSwitcherOpen, setOutletSwitcherOpen] = useState(false);
   const [outlets, setOutlets] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [online, setOnline] = useState(() => localStorage.getItem("pos_offline") !== "1");
 
   const currentOutletName = activeOutlet?.nama ?? user.outlet_nama;
 
-  // Fungsi Fetch Notifikasi
-  const fetchNotifications = async () => {
-    if (!isAdmin) return;
-    try {
-      const res = await api.get("/notifications");
-      setNotifications(res.notifications || []);
-    } catch (err) {
-      // Abaikan error diam-diam
-    }
-  };
-
-  // Efek untuk memuat outlet dan notifikasi
   useEffect(() => {
     if (!isAdmin) return;
     api.get("/outlets").then((res) => setOutlets(res.outlets)).catch(() => {});
   }, [isAdmin]);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [activeOutlet, isAdmin]);
-
-  // Fungsi saat notifikasi diklik
-  const handleNotifClick = (notif) => {
-    setNotifOpen(false); // Tutup dropdown
-    // Kita hapus kode api.post('/notifications/read') dan setNotifications di sini
-    
-    if (notif.tipe === "shift_selisih") {
-      navigate("/shift"); 
-    } else if (notif.tipe === "stok_approval" || notif.tipe === "stok_menipis") {
-      navigate("/inventaris"); 
-    }
-  };
 
   const toggleOnline = () => {
     const next = !online; setOnline(next);
@@ -102,7 +72,7 @@ export function AppShell() {
             <div className="relative hidden md:block">
               <button
                 className="flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                onClick={() => { setOutletSwitcherOpen(!outletSwitcherOpen); setProfileOpen(false); setNotifOpen(false); }}
+                onClick={() => { setOutletSwitcherOpen(!outletSwitcherOpen); setProfileOpen(false); }}
               >
                 <Store size={14} className="text-slate-400" /> {currentOutletName} <ChevronDown size={14} />
               </button>
@@ -128,55 +98,7 @@ export function AppShell() {
           )}
           
           <div className="relative">
-            <button 
-              className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" 
-              onClick={() => { 
-                setNotifOpen(!notifOpen); 
-                setProfileOpen(false);
-                if (!notifOpen) fetchNotifications(); // Tarik data terbaru tiap lonceng dibuka
-              }} 
-              aria-label="Notifikasi"
-            >
-              <Bell size={19} />
-              {notifications.length > 0 && (
-                <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-                  {notifications.length}
-                </span>
-              )}
-            </button>
-            
-            {notifOpen && (
-              <div className="absolute right-0 top-12 z-40 w-80 max-h-96 overflow-y-auto rounded-lg border bg-white p-2 shadow-xl">
-                <div className="px-2 py-2 text-xs font-bold flex justify-between items-center">
-                  <span>Notifikasi terbaru</span>
-                </div>
-                
-                {notifications.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-slate-500">Tidak ada notifikasi baru</div>
-                ) : (
-                  <div className="space-y-1">
-                    {notifications.map((n) => (
-                      <button 
-                        key={n.id} 
-                        onClick={() => handleNotifClick(n)}
-                        className="flex w-full items-start gap-3 rounded-lg p-2 text-left hover:bg-slate-50"
-                      >
-                        <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.tipe === "shift_selisih" ? "bg-orange" : "bg-blue-500"}`} />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold text-slate-700 truncate">{n.judul}</div>
-                          <div className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">{n.pesan}</div>
-                          <div className="mt-1 text-[9px] font-medium text-slate-400">{n.created_at}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="relative">
-            <button className="flex items-center gap-2" onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }} aria-label="Menu profil"><span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-xs font-bold text-white">{user.name.slice(0, 1)}</span><ChevronDown size={14} className="text-slate-400" /></button>
+            <button className="flex items-center gap-2" onClick={() => setProfileOpen(!profileOpen)} aria-label="Menu profil"><span className="grid h-9 w-9 place-items-center rounded-full bg-navy text-xs font-bold text-white">{user.name.slice(0, 1)}</span><ChevronDown size={14} className="text-slate-400" /></button>
             {profileOpen && <div className="absolute right-0 top-12 z-40 w-64 rounded-lg border bg-white p-3 shadow-xl">
               <div className="border-b pb-3"><div className="text-sm font-bold">{user.role}</div><div className="mt-1 text-xs text-slate-500">{user.email}</div></div>
               <button className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50" onClick={() => { setChangePasswordOpen(true); setProfileOpen(false); }}><KeyRound size={15} /> Ganti Password</button>
